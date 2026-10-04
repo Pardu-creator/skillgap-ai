@@ -41,7 +41,7 @@ jobs:
 
       - name: 🏗️ Build Release APK
         working-directory: project1-main/android-app
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon -PGEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
 
