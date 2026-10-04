@@ -1,0 +1,79 @@
+<resources>
+    <string name="app_name">SkillGap AI</string>
+
+    <!-- Bottom Nav -->
+    <string name="nav_analyzer">Analyzer</string>
+    <string name="nav_roadmaps">Roadmaps</string>
+    <string name="nav_mentor">AI Mentor</string>
+
+    <!-- Analyzer Tab -->
+    <string name="analyzer_title">Resume &amp; Target Role</string>
+    <string name="upload_title">Drop your Resume PDF here</string>
+    <string name="upload_subtitle">Supports PDF and TXT files</string>
+    <string name="upload_button">Upload Resume File</string>
+    <string name="preset_title">Or Try a Sample Profile</string>
+    <string name="preset_frontend">💻 Frontend Dev</string>
+    <string name="preset_ai">🤖 AI &amp; ML Engineer</string>
+    <string name="preset_fullstack">⚡ Full Stack Dev</string>
+    <string name="resume_label">Resume Content</string>
+    <string name="resume_hint">Paste resume text or upload PDF above…</string>
+    <string name="resume_extracted">Text automatically extracted</string>
+    <string name="jd_label">Target Job Description (Optional)</string>
+    <string name="jd_hint">Paste target job requirements here…</string>
+    <string name="jd_note">Leave blank for role benchmarks</string>
+    <string name="analyze_btn">✨ Analyze Employability &amp; Gaps</string>
+    <string name="analyzing_btn">Analyzing with AI…</string>
+
+    <!-- Results -->
+    <string name="results_title">Assessment Results</string>
+    <string name="empty_title">No Assessment Yet</string>
+    <string name="empty_desc">Upload your resume or tap a preset to view your Employability Score and Skill Gap breakdown.</string>
+    <string name="overall_readiness">Overall Readiness</string>
+    <string name="score_desc">Based on detected skills, JD alignment, and industry benchmarks.</string>
+    <string name="target_match">Target Role Match</string>
+    <string name="skill_breadth">Skill Breadth &amp; Depth</string>
+    <string name="top_role">Top Role Alignment</string>
+    <string name="matched_skills">Matched Skills</string>
+    <string name="missing_gaps">Missing Skill Gaps</string>
+    <string name="additional_skills">Additional Skills</string>
+    <string name="skills_format">%d Skills</string>
+    <string name="gaps_format">%d Gaps</string>
+    <string name="additional_format">%d Additional</string>
+    <string name="none_detected">None detected</string>
+
+    <!-- AI Feedback -->
+    <string name="ai_analysis">AI Resume Analysis</string>
+    <string name="ai_generating">Generating deep feedback with Gemini AI…</string>
+    <string name="ai_verdict">AI Verdict</string>
+    <string name="strengths">Strengths</string>
+    <string name="improvements">Critical Improvements</string>
+    <string name="ats_tips">ATS Optimization Tips</string>
+    <string name="interview_topics">Likely Interview Topics</string>
+
+    <!-- Roadmap Tab -->
+    <string name="roadmap_title">Career Upskilling Roadmap</string>
+    <string name="roadmap_subtitle">Step-by-Step Learning Timeline</string>
+    <string name="roadmap_desc">This roadmap highlights what to learn first to transform your resume into a top-tier profile.</string>
+    <string name="roadmap_empty">Run an analysis first to generate your personalized roadmap.</string>
+
+    <!-- Chat Tab -->
+    <string name="chat_title">AI Career Advisor</string>
+    <string name="chat_online">Online</string>
+    <string name="chat_greeting">👋 Hello! I am your AI Career Mentor. Run an analysis or ask me anything about resumes, interviews, and career roadmaps!</string>
+    <string name="chat_hint">Ask your AI Mentor anything…</string>
+    <string name="chip_improve">🎯 How can I improve my score?</string>
+    <string name="chip_roadmap">🚀 Best learning roadmap?</string>
+    <string name="chip_interview">💼 Interview questions for my role</string>
+    <string name="ai_thinking">AI is thinking…</string>
+
+    <!-- Errors -->
+    <string name="no_internet">No Internet Connection</string>
+    <string name="check_connection">Please check your internet connection and try again.</string>
+    <string name="retry">Retry</string>
+    <string name="error_api">AI service is temporarily unavailable</string>
+    <string name="error_no_resume">Please upload a resume or paste your resume text first.</string>
+
+    <!-- Employability -->
+    <string name="employability_label">Employability</string>
+    <string name="percent_format">%d%%</string>
+</resources>

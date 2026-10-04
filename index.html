@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkillGap AI - Smart Employability & Career Assessment Platform</title>
+  <meta name="description" content="AI-powered skill gap analyzer, employability scoring engine, career roadmaps, and instant resume match feedback for tech roles.">
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- PDF.js for Direct Client-side Resume Parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Background Pattern -->
+  <div class="bg-grid-pattern"></div>
+
+  <!-- SVG Gradient Definition for Gauge -->
+  <svg style="width:0;height:0;position:absolute;" aria-hidden="true" focusable="false">
+    <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#a855f7" />
+    </linearGradient>
+  </svg>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <a href="#" class="nav-brand">
+      <div class="brand-icon">
+        <i data-lucide="sparkles" style="color: #fff; width: 22px; height: 22px;"></i>
+      </div>
+      <span class="brand-text">SkillGap AI</span>
+      <span class="brand-badge">Vercel Ready</span>
+    </a>
+
+    <div class="nav-tabs">
+      <button class="nav-tab-btn active" data-tab="tab-analyzer">
+        <i data-lucide="scan" style="width: 16px; height: 16px;"></i>
+        Smart Analyzer
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-roadmaps">
+        <i data-lucide="map" style="width: 16px; height: 16px;"></i>
+        Career Roadmaps
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-mentor">
+        <i data-lucide="bot" style="width: 16px; height: 16px;"></i>
+        AI Mentor
+      </button>
+    </div>
+
+    <div class="nav-actions">
+      <a href="SkillGapAI.apk" download class="btn-secondary" style="text-decoration: none;">
+        <i data-lucide="smartphone" style="width: 16px; height: 16px;"></i>
+        Download APK
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Header -->
+  <header class="hero">
+    <div class="hero-pill">
+      <span class="pulse-dot"></span>
+      AI-Powered Career Intelligence 2.0
+    </div>
+    <h1 class="hero-title">
+      Close Your <span class="gradient-text">Skill Gaps</span>.<br>Maximize Your Employability.
+    </h1>
+    <p class="hero-subtitle">
+      Instant resume ATS extraction, real-time job description matching, personalized career roadmaps, and interactive AI career mentorship.
+    </p>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-container">
+
+    <!-- Tab 1: Smart Analyzer -->
+    <div id="tab-analyzer" class="tab-content-panel active">
+      <div class="app-grid">
+        
+        <!-- Left Column: Input Form -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i data-lucide="file-text" style="width: 20px; height: 20px;"></i>
+              Resume & Target Role
+            </h3>
+          </div>
+
+          <!-- Drag & Drop Upload Zone -->
+          <div class="upload-zone" id="uploadZone">
+            <input type="file" id="resumeFile" accept=".pdf,.txt,.docx" style="display: none;">
+            <div class="upload-icon">
+              <i data-lucide="upload-cloud" style="width: 28px; height: 28px;"></i>
+            </div>
+            <h4>Drop your Resume PDF here</h4>
+            <p>Supports PDF, TXT, DOCX files (instant local parsing)</p>
+            <div class="file-status" id="fileStatus"></div>
+          </div>
+
+          <!-- Quick Presets -->
+          <div class="preset-section">
+            <div class="preset-title">Or Try a Sample Candidate Profile</div>
+            <div class="preset-chips">
+              <button class="chip-btn" data-preset="frontend">💻 Frontend Dev</button>
+              <button class="chip-btn" data-preset="ai">🤖 AI & ML Engineer</button>
+              <button class="chip-btn" data-preset="fullstack">⚡ Full Stack Dev</button>
+            </div>
+          </div>
+
+          <!-- Resume Textarea -->
+          <div class="form-group">
+            <label class="form-label" for="resumeText">
+              <span>Resume Content</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Text automatically extracted</span>
+            </label>
+            <textarea id="resumeText" class="custom-textarea" placeholder="Paste resume text or upload PDF above..."></textarea>
+          </div>
+
+          <!-- Job Description Textarea -->
+          <div class="form-group">
+            <label class="form-label" for="jobDesc">
+              <span>Target Job Description (Optional)</span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">Leave blank for role benchmarks</span>
+            </label>
+            <textarea id="jobDesc" class="custom-textarea" placeholder="Paste target job requirements / description here..."></textarea>
+          </div>
+
+          <!-- Submit Button -->
+          <button id="analyzeBtn" class="btn-primary">
+            <i data-lucide="sparkles" style="width: 18px; height: 18px;"></i>
+            Analyze Employability & Gaps
+          </button>
+        </div>
+
+        <!-- Right Column: Results -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i data-lucide="bar-chart-3" style="width: 20px; height: 20px;"></i>
+              Assessment Results
+            </h3>
+          </div>
+
+          <!-- Empty State -->
+          <div id="emptyResultState" class="empty-state">
+            <div class="empty-icon">📊</div>
+            <h4 style="font-size: 1.1rem; color: var(--text-primary); margin-bottom: 0.5rem;">No Assessment Generated Yet</h4>
+            <p style="font-size: 0.85rem; max-width: 320px; margin: 0 auto;">Upload your resume PDF or click one of the quick presets on the left to view your Employability Score and Skill Gap breakdown.</p>
+          </div>
+
+          <!-- Active Results Container -->
+          <div id="resultsContainer" style="display: none;">
+            
+            <!-- Score Overview Gauge -->
+            <div class="score-overview">
+              <div class="gauge-container">
+                <svg class="gauge-svg" width="150" height="150" viewBox="0 0 150 150">
+                  <circle class="gauge-bg" cx="75" cy="75" r="65" />
+                  <circle id="gaugeProgress" class="gauge-progress" cx="75" cy="75" r="65" />
+                </svg>
+                <div class="gauge-inner-text">
+                  <span id="gaugeValue" class="gauge-value">0%</span>
+                  <span class="gauge-label">Employability</span>
+                </div>
+              </div>
+
+              <div class="score-details">
+                <h3>Overall Readiness</h3>
+                <p>Calculated based on detected skills, JD alignment, and industry benchmarks.</p>
+                
+                <div class="metric-bar-group">
+                  <div class="metric-bar-item">
+                    <div class="metric-bar-header">
+                      <span>Target Role Match</span>
+                      <span id="matchScoreVal">0%</span>
+                    </div>
+                    <div class="metric-track">
+                      <div id="matchScoreFill" class="metric-fill cyan" style="width: 0%;"></div>
+                    </div>
+                  </div>
+
+                  <div class="metric-bar-item">
+                    <div class="metric-bar-header">
+                      <span>Skill Breadth Depth</span>
+                      <span id="breadthScoreVal">0%</span>
+                    </div>
+                    <div class="metric-track">
+                      <div id="breadthScoreFill" class="metric-fill indigo" style="width: 0%;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Suggested Roles Banner -->
+            <div class="roles-banner">
+              <div class="roles-info">
+                <div class="roles-icon">
+                  <i data-lucide="award" style="width: 22px; height: 22px;"></i>
+                </div>
+                <div class="roles-text">
+                  <h4>Top Role Alignment</h4>
+                  <p id="topRoleTitle">Software Developer</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Feedback Container -->
+            <div class="glass-card" id="aiFeedbackContainer" style="display: none; margin-bottom: 1.5rem; background: rgba(15, 23, 42, 0.4); border-color: rgba(99, 102, 241, 0.2); padding: 1.25rem;">
+              <div class="card-header" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+                <h3 class="card-title" style="font-size: 1rem;">
+                  <i data-lucide="sparkles" style="width: 18px; height: 18px; color: var(--accent-purple);"></i>
+                  AI Resume Analysis
+                </h3>
+              </div>
+              
+              <!-- Loading State -->
+              <div id="aiFeedbackLoading" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 0; gap: 1rem;">
+                <div class="typing-dots" style="justify-content: center; display: flex; gap: 4px;">
+                  <span style="width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%; animation: typing 1.4s infinite 0.2s;"></span>
+                  <span style="width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%; animation: typing 1.4s infinite 0.4s;"></span>
+                  <span style="width: 6px; height: 6px; background: var(--text-muted); border-radius: 50%; animation: typing 1.4s infinite 0.6s;"></span>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Generating deep feedback with Gemini AI...</p>
+              </div>
+
+              <!-- Content State -->
+              <div id="aiFeedbackContent" style="display: none; margin-top: 1rem;"></div>
+            </div>
+
+            <!-- Matched Skills -->
+            <div class="skills-container">
+              <div class="skills-header">
+                <span class="skills-title">
+                  <i data-lucide="check-circle-2" style="color: var(--accent-emerald); width: 18px; height: 18px;"></i>
+                  Matched Skills
+                </span>
+                <span id="matchedCount" class="count-pill green">0 Skills</span>
+              </div>
+              <div id="matchedCloud" class="tag-cloud"></div>
+            </div>
+
+            <!-- Missing Skills (Gaps) -->
+            <div class="skills-container">
+              <div class="skills-header">
+                <span class="skills-title">
+                  <i data-lucide="alert-circle" style="color: var(--accent-rose); width: 18px; height: 18px;"></i>
+                  Missing Skill Gaps
+                </span>
+                <span id="missingCount" class="count-pill rose">0 Gaps</span>
+              </div>
+              <div id="missingCloud" class="tag-cloud"></div>
+            </div>
+
+            <!-- Additional Skills -->
+            <div class="skills-container">
+              <div class="skills-header">
+                <span class="skills-title">
+                  <i data-lucide="plus-circle" style="color: var(--accent-indigo); width: 18px; height: 18px;"></i>
+                  Additional Candidate Skills
+                </span>
+                <span id="extraCount" class="count-pill cyan">0 Skills</span>
+              </div>
+              <div id="extraCloud" class="tag-cloud"></div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Tab 2: Career Roadmaps -->
+    <div id="tab-roadmaps" class="tab-content-panel">
+      <div class="glass-card" style="max-width: 860px; margin: 0 auto;">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i data-lucide="milestone" style="width: 20px; height: 20px;"></i>
+            Tailored Career Upskilling Roadmap
+          </h3>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Step-by-Step Learning Timeline</span>
+        </div>
+
+        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+          This roadmap dynamically highlights what to learn first to transform your resume into a top-tier candidate profile.
+        </p>
+
+        <div id="roadmapList" class="roadmap-timeline">
+          <!-- Populated dynamically via JS -->
+          <div class="timeline-step">
+            <div class="timeline-node"></div>
+            <div class="timeline-content">
+              <h5>Phase 1: Foundation & High-Priority Gaps (Weeks 1-3)</h5>
+              <p>Analyze your resume first to generate personalized skill progression milestones.</p>
+              <div class="timeline-tags">
+                <span class="timeline-tag">Core Fundamentals</span>
+                <span class="timeline-tag">Hands-on Exercises</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: AI Mentor Chat -->
+    <div id="tab-mentor" class="tab-content-panel">
+      <div class="glass-card" style="max-width: 860px; margin: 0 auto;">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i data-lucide="bot" style="width: 20px; height: 20px;"></i>
+            AI Career Advisor & Interview Mentor
+          </h3>
+          <span class="hero-pill" style="margin: 0; padding: 0.25rem 0.65rem;">
+            <span class="pulse-dot"></span> Online
+          </span>
+        </div>
+
+        <!-- Chat Container -->
+        <div class="chat-container">
+          <div id="chatMessages" class="chat-messages">
+            <!-- Initial Greeting -->
+            <div class="chat-bubble ai">
+              👋 Hello! I am your <strong>AI Career Mentor</strong>. Run an analysis or click one of the quick questions below to get expert resume, interview, and roadmapping advice!
+            </div>
+          </div>
+
+          <!-- Suggested Prompt Chips -->
+          <div class="chat-chips">
+            <button class="chip-btn">🎯 How can I improve my score?</button>
+            <button class="chip-btn">🚀 What is the best learning roadmap?</button>
+            <button class="chip-btn">💼 Give me interview questions for my role</button>
+          </div>
+
+          <!-- Input Bar -->
+          <div class="chat-input-row">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Ask your AI Mentor anything about your career or resume...">
+            <button id="chatSendBtn" class="chat-send-btn">
+              <i data-lucide="send" style="width: 18px; height: 18px;"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <p>⚡ SkillGap AI • Production Web Platform • Built for Vercel & Mobile</p>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+  <script>
+    // Initialize Lucide Icons
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+# Secrets and Environment Variables
+.env
+.env.*
+secrets.toml
+.streamlit/secrets.toml
+*.pem
+*.key
+*.keystore
+*.jks
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+dist/
+build/
+*.egg-info/
+
+# Android / Gradle
+.gradle/
+build/
+app/build/
+android-app/.gradle/
+android-app/build/
+android-app/app/build/
+android-app/local.properties
+.idea/
+*.iml
+.DS_Store
+
+# Logs and Uploads
+*.log
+uploads/
+results/
+
+.vercel

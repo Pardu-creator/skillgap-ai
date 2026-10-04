@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>AI Employability Assessment Platform</title>
+
+<style>
+
+body{
+font-family:Segoe UI, Arial;
+background:#f4f6f9;
+margin:0;
+}
+
+.header{
+background:#1f2d3d;
+color:white;
+padding:20px;
+text-align:center;
+font-size:26px;
+font-weight:bold;
+}
+
+.container{
+width:900px;
+margin:40px auto;
+background:white;
+padding:30px;
+border-radius:10px;
+box-shadow:0 4px 12px rgba(0,0,0,0.1);
+}
+
+label{
+font-weight:600;
+display:block;
+margin-top:15px;
+}
+
+input[type=file], textarea{
+width:100%;
+padding:12px;
+margin-top:8px;
+border:1px solid #ccc;
+border-radius:6px;
+}
+
+textarea{
+resize:none;
+}
+
+button{
+margin-top:20px;
+background:#2f6fed;
+color:white;
+border:none;
+padding:14px;
+width:100%;
+font-size:16px;
+border-radius:6px;
+cursor:pointer;
+}
+
+button:hover{
+background:#1e4fbf;
+}
+
+.result{
+margin-top:30px;
+padding:25px;
+background:#f8f9fc;
+border-radius:8px;
+}
+
+.score-title{
+font-size:22px;
+font-weight:bold;
+color:#2f6fed;
+margin-bottom:10px;
+}
+
+.progress-bar{
+background:#ddd;
+border-radius:20px;
+overflow:hidden;
+height:22px;
+margin-bottom:25px;
+}
+
+.progress{
+height:100%;
+background:#2f6fed;
+text-align:center;
+color:white;
+font-size:13px;
+line-height:22px;
+}
+
+.skill-tag{
+display:inline-block;
+padding:6px 12px;
+margin:5px;
+border-radius:20px;
+font-size:14px;
+}
+
+.matched{
+background:#d4edda;
+color:#155724;
+}
+
+.missing{
+background:#f8d7da;
+color:#721c24;
+}
+
+.section-title{
+font-size:18px;
+margin-top:20px;
+font-weight:bold;
+}
+
+.role-box{
+background:#e8f0fe;
+padding:10px;
+border-radius:6px;
+font-size:16px;
+font-weight:bold;
+margin-bottom:20px;
+}
+
+ul{
+padding-left:20px;
+}
+
+.footer{
+text-align:center;
+margin-top:20px;
+color:#777;
+font-size:13px;
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<div class="header">
+AI Employability Assessment Platform
+</div>
+
+
+<div class="container">
+
+<form method="POST" enctype="multipart/form-data">
+
+<label>Upload Resume (PDF)</label>
+<input type="file" name="resume" required>
+
+<label>Enter Job Description</label>
+<textarea name="job_desc" rows="6" required></textarea>
+
+<button type="submit">Analyze Employability</button>
+
+</form>
+
+
+{% if score %}
+
+<div class="result">
+
+<div class="score-title">
+Employability Score : {{score}}%
+</div>
+
+<div class="progress-bar">
+<div class="progress" style="width:{{score}}%">
+{{score}}%
+</div>
+</div>
+
+
+<div class="section-title">Suggested Job Role</div>
+
+<div class="role-box">
+{{job_role}}
+</div>
+
+
+<div class="section-title">Matched Skills</div>
+
+{% for skill in matched %}
+<span class="skill-tag matched">{{skill}}</span>
+{% endfor %}
+
+
+<div class="section-title">Missing Skills</div>
+
+{% for skill in missing %}
+<span class="skill-tag missing">{{skill}}</span>
+{% endfor %}
+
+
+<div class="section-title">Recommended Learning</div>
+
+<ul>
+{% for skill,course in recommendations.items() %}
+<li><b>{{skill}}</b> → {{course}}</li>
+{% endfor %}
+</ul>
+
+
+<div class="section-title">Resume Improvement Suggestions</div>
+
+<ul>
+{% for tip in improvements %}
+<li>{{tip}}</li>
+{% endfor %}
+</ul>
+
+
+</div>
+
+{% endif %}
+
+</div>
+
+
+<div class="footer">
+AI Powered Skill Gap Analysis System
+</div>
+
+
+</body>
+</html>
