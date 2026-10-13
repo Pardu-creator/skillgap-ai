@@ -1,4 +1,5 @@
 import streamlit as st
+import database
 from backend import register_user, login_user, analyze_resume, ai_mentor_response
 import random
 import time
@@ -20,6 +21,8 @@ def init_session():
     defaults = {
         "logged_in": False,
         "username": "",
+        "user_profile": None,
+        "auth_tab": "Sign In",
         "analysis_result": None,
         "last_uploaded_name": "",
         "mentor_chat": [],
@@ -42,320 +45,269 @@ if not st.session_state.logged_in:
     st.markdown(
         """
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
 
         * {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             box-sizing: border-box;
         }
 
         #MainMenu, footer, header {visibility: hidden;}
 
         .stApp {
-            background: #050510 !important;
+            background: #060814 !important;
             color: #E2E8F0;
             min-height: 100vh;
-            overflow: hidden;
         }
 
-        /* Animated background orbs */
-        .login-bg-effects {
+        /* ===== CINEMATIC SPLASH SCREEN (LOGO COMES FIRST) ===== */
+        .splash-overlay {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, #0F172A 0%, #060814 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999999;
+            animation: splashDismiss 2.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
-        .login-orb {
+
+        @keyframes splashDismiss {
+            0% { opacity: 1; pointer-events: all; }
+            70% { opacity: 1; pointer-events: all; }
+            95% { opacity: 0; pointer-events: all; transform: scale(1.05); }
+            100% { opacity: 0; pointer-events: none; visibility: hidden; }
+        }
+
+        .splash-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            animation: splashEntry 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes splashEntry {
+            0% { transform: scale(0.8) translateY(10px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .splash-logo-container {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .splash-logo-pulse {
             position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            animation: orbFloat 8s ease-in-out infinite;
-        }
-        .login-orb-1 {
-            width: 500px; height: 500px;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%);
-            top: -10%; left: -5%;
-            animation-delay: 0s;
-        }
-        .login-orb-2 {
-            width: 400px; height: 400px;
-            background: radial-gradient(circle, rgba(14, 165, 233, 0.25) 0%, transparent 70%);
-            bottom: -15%; right: -5%;
-            animation-delay: -3s;
-        }
-        .login-orb-3 {
-            width: 300px; height: 300px;
-            background: radial-gradient(circle, rgba(168, 85, 247, 0.2) 0%, transparent 70%);
-            top: 50%; left: 40%;
-            animation-delay: -5s;
-        }
-        @keyframes orbFloat {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(30px, -20px) scale(1.05); }
-            66% { transform: translate(-20px, 15px) scale(0.95); }
+            width: 110px;
+            height: 110px;
+            border-radius: 32px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.5), rgba(168, 85, 247, 0.5));
+            filter: blur(28px);
+            animation: splashPulseAnim 2s ease-in-out infinite;
         }
 
-        /* Split screen layout */
-        .login-split-container {
-            display: flex;
-            min-height: 100vh;
+        @keyframes splashPulseAnim {
+            0%, 100% { transform: scale(0.95); opacity: 0.6; }
+            50% { transform: scale(1.25); opacity: 1; filter: blur(36px); }
+        }
+
+        .splash-logo-box {
             position: relative;
-            z-index: 1;
-        }
-        .login-left-panel {
-            flex: 1.1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 60px 70px;
-            position: relative;
-        }
-        .login-right-panel {
-            flex: 0.9;
+            width: 90px;
+            height: 90px;
+            border-radius: 26px;
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #0EA5E9 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 40px;
+            font-size: 46px;
+            box-shadow: 0 16px 45px rgba(99, 102, 241, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+            animation: logoFloat 3s ease-in-out infinite;
         }
 
-        /* Left panel brand content */
-        .login-brand-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 999px;
-            background: rgba(99, 102, 241, 0.12);
-            border: 1px solid rgba(99, 102, 241, 0.25);
-            font-size: 13px;
-            font-weight: 600;
-            color: #A5B4FC;
-            margin-bottom: 28px;
-            width: fit-content;
-        }
-        .login-brand-badge .badge-dot {
-            width: 7px; height: 7px;
-            background: #6366F1;
-            border-radius: 50%;
-            box-shadow: 0 0 12px #6366F1;
-            animation: pulse-glow 2s ease-in-out infinite;
-        }
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 8px #6366F1; }
-            50% { box-shadow: 0 0 20px #6366F1, 0 0 40px rgba(99,102,241,0.3); }
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
         }
 
-        .login-hero-title {
-            font-size: 52px;
-            font-weight: 900;
-            line-height: 1.08;
-            letter-spacing: -0.03em;
-            margin-bottom: 18px;
-        }
-        .login-hero-title .title-gradient {
-            background: linear-gradient(135deg, #6366F1 0%, #0EA5E9 40%, #A78BFA 80%, #38BDF8 100%);
-            background-size: 200% auto;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            animation: shimmer 4s ease-in-out infinite;
-        }
-        @keyframes shimmer {
-            0% { background-position: 0% center; }
-            50% { background-position: 100% center; }
-            100% { background-position: 0% center; }
-        }
-        .login-hero-sub {
-            font-size: 17px;
-            color: #94A3B8;
-            line-height: 1.7;
-            max-width: 440px;
-            margin-bottom: 40px;
-            font-weight: 400;
-        }
-
-        /* Feature highlights */
-        .login-features {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            margin-bottom: 40px;
-        }
-        .login-feature-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-        .feature-icon-circle {
-            width: 40px; height: 40px;
-            min-width: 40px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-        }
-        .feature-icon-blue { background: rgba(14, 165, 233, 0.15); border: 1px solid rgba(14, 165, 233, 0.3); }
-        .feature-icon-purple { background: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); }
-        .feature-icon-emerald { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); }
-        .feature-text {
-            font-size: 14px;
-            font-weight: 600;
-            color: #CBD5E1;
-        }
-        .feature-text span {
-            color: #F8FAFC;
-            font-weight: 700;
-        }
-
-        /* Trust bar */
-        .login-trust-bar {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            padding-top: 10px;
-        }
-        .trust-stat {
-            display: flex;
-            flex-direction: column;
-        }
-        .trust-val {
-            font-size: 22px;
+        .splash-title {
+            font-size: 38px;
             font-weight: 900;
             color: #FFFFFF;
-        }
-        .trust-label {
-            font-size: 12px;
-            color: #64748B;
-            font-weight: 500;
-        }
-        .trust-divider {
-            width: 1px;
-            height: 36px;
-            background: rgba(255,255,255,0.08);
+            letter-spacing: -0.03em;
+            margin-bottom: 6px;
         }
 
-        /* Glassmorphism login card */
-        .login-glass-card {
-            width: 100%;
-            max-width: 420px;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 28px;
-            padding: 42px 36px;
-            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.5),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.06);
-            position: relative;
+        .splash-ai {
+            background: linear-gradient(135deg, #6366F1, #38BDF8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .splash-sub {
+            font-size: 12px;
+            font-weight: 700;
+            color: #94A3B8;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            margin-bottom: 30px;
+        }
+
+        .splash-bar-outer {
+            width: 170px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
             overflow: hidden;
         }
-        .login-glass-card::before {
-            content: '';
-            position: absolute;
-            top: -50%; right: -50%;
-            width: 200px; height: 200px;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
-            pointer-events: none;
+
+        .splash-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #6366F1, #38BDF8);
+            border-radius: 999px;
+            animation: splashFill 1.6s ease-in-out forwards;
         }
 
-        .login-card-header {
-            text-align: center;
-            margin-bottom: 32px;
+        @keyframes splashFill {
+            0% { width: 0%; }
+            45% { width: 65%; }
+            100% { width: 100%; }
         }
-        .login-card-icon {
-            width: 60px; height: 60px;
-            margin: 0 auto 16px auto;
+
+        /* ===== CLEAN LOGIN CONTAINER & CARD ===== */
+        .clean-login-wrapper {
+            max-width: 460px;
+            margin: 30px auto 40px auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            animation: loginFadeIn 0.8s 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @keyframes loginFadeIn {
+            0% { opacity: 0; transform: translateY(18px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .clean-card-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .clean-brand-icon {
+            width: 58px;
+            height: 58px;
             border-radius: 18px;
-            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A78BFA 100%);
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 60%, #A855F7 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 28px;
-            box-shadow: 0 12px 28px -4px rgba(99, 102, 241, 0.4);
+            margin: 0 auto 14px auto;
+            box-shadow: 0 10px 28px -4px rgba(99, 102, 241, 0.4);
         }
-        .login-card-title {
-            font-size: 24px;
-            font-weight: 800;
+
+        .clean-app-title {
+            font-size: 26px;
+            font-weight: 900;
             color: #FFFFFF;
-            margin-bottom: 6px;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
         }
-        .login-card-sub {
-            font-size: 14px;
+
+        .clean-app-sub {
+            font-size: 13px;
             color: #64748B;
             font-weight: 500;
         }
 
         /* Inputs */
         .stTextInput label {
-            font-size: 13px !important;
+            font-size: 12px !important;
             font-weight: 700 !important;
             color: #94A3B8 !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.05em !important;
-            margin-bottom: 6px !important;
+            letter-spacing: 0.04em !important;
+            margin-bottom: 4px !important;
         }
         .stTextInput input {
-            background: rgba(15, 23, 42, 0.8) !important;
-            border: 1.5px solid rgba(255, 255, 255, 0.08) !important;
-            border-radius: 14px !important;
+            background: rgba(15, 23, 42, 0.85) !important;
+            border: 1px solid rgba(99, 102, 241, 0.16) !important;
+            border-radius: 12px !important;
             color: #F8FAFC !important;
-            padding: 16px 18px !important;
-            font-size: 15px !important;
-            transition: all 0.25s ease !important;
-        }
-        .stTextInput input::placeholder {
-            color: #475569 !important;
+            padding: 14px 16px !important;
+            font-size: 14px !important;
+            transition: all 0.2s ease !important;
         }
         .stTextInput input:focus {
-            background: rgba(15, 23, 42, 0.95) !important;
             border-color: #6366F1 !important;
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), 0 0 20px rgba(99, 102, 241, 0.1) !important;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18) !important;
+            background: rgba(15, 23, 42, 0.98) !important;
         }
 
-        /* Sign in button */
+        /* Action Buttons */
         .stButton > button {
-            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #A78BFA 100%) !important;
-            background-size: 200% auto !important;
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 60%, #A855F7 100%) !important;
             color: #FFFFFF !important;
             border: none !important;
-            border-radius: 14px !important;
-            height: 54px !important;
+            border-radius: 12px !important;
+            height: 48px !important;
             font-weight: 800 !important;
-            font-size: 16px !important;
-            letter-spacing: 0.01em !important;
-            box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.45) !important;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            font-size: 15px !important;
+            box-shadow: 0 8px 22px -4px rgba(99, 102, 241, 0.4) !important;
+            transition: all 0.25s ease !important;
             width: 100% !important;
         }
         .stButton > button:hover {
-            background-position: right center !important;
-            transform: translateY(-3px) !important;
-            box-shadow: 0 16px 32px -4px rgba(99, 102, 241, 0.55) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 14px 30px -4px rgba(99, 102, 241, 0.55) !important;
         }
-        .stButton > button:active {
+
+        /* Tab styling */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px !important;
+            background: rgba(15, 23, 42, 0.6) !important;
+            padding: 4px !important;
+            border-radius: 14px !important;
+            border: 1px solid rgba(255, 255, 255, 0.06) !important;
+            margin-bottom: 20px !important;
+        }
+        .stTabs [data-baseweb="tab"] {
+            border-radius: 10px !important;
+            padding: 8px 16px !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            color: #94A3B8 !important;
+            border: none !important;
+            flex: 1 !important;
+            justify-content: center !important;
+        }
+        .stTabs [aria-selected="true"] {
+            background: rgba(99, 102, 241, 0.2) !important;
+            color: #A5B4FC !important;
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.2) !important;
+        }
+
+        /* Subtle pill buttons */
+        div[data-testid="stHorizontalBlock"] .stButton > button {
+            height: 38px !important;
+            font-size: 12px !important;
+            background: rgba(99, 102, 241, 0.08) !important;
+            border: 1px solid rgba(99, 102, 241, 0.2) !important;
+            color: #CBD5E1 !important;
+            box-shadow: none !important;
+        }
+        div[data-testid="stHorizontalBlock"] .stButton > button:hover {
+            background: rgba(99, 102, 241, 0.18) !important;
+            border-color: #6366F1 !important;
+            color: #FFFFFF !important;
             transform: translateY(-1px) !important;
-        }
-
-        .demo-note {
-            text-align: center;
-            color: #64748B;
-            font-size: 13px;
-            font-weight: 500;
-            margin-top: 20px;
-            padding: 10px 16px;
-            background: rgba(99, 102, 241, 0.06);
-            border: 1px solid rgba(99, 102, 241, 0.12);
-            border-radius: 10px;
-        }
-        .demo-note b { color: #A5B4FC; }
-
-        .copyright-text {
-            text-align: center;
-            color: #334155;
-            font-size: 12px;
-            margin-top: 22px;
         }
         </style>
         """,
@@ -453,6 +405,150 @@ else:
             font-weight: 700;
             margin-top: 2px;
             letter-spacing: 0.03em;
+        }
+
+        /* ===== NATIVE APP TOPBAR & NAVIGATION ===== */
+        .app-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 22px;
+            background: rgba(10, 15, 30, 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(99, 102, 241, 0.16);
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+        }
+        .app-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .app-brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #6366F1, #8B5CF6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+        }
+        .app-brand-title {
+            font-size: 20px;
+            font-weight: 900;
+            color: #FFFFFF;
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+        .app-user-pill {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 6px 14px 6px 6px;
+            border-radius: 999px;
+        }
+        .app-user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6366F1, #0EA5E9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 12px;
+            color: #FFFFFF;
+        }
+        .app-user-name {
+            font-size: 13px;
+            font-weight: 700;
+            color: #F1F5F9;
+        }
+
+        /* App Quick Actions */
+        .app-action-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .app-action-tile {
+            background: linear-gradient(145deg, rgba(15, 23, 42, 0.8) 0%, rgba(10, 15, 30, 0.95) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.12);
+            border-radius: 18px;
+            padding: 18px;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .app-action-tile:hover {
+            transform: translateY(-3px);
+            border-color: rgba(99, 102, 241, 0.35);
+            box-shadow: 0 12px 28px -6px rgba(99, 102, 241, 0.25);
+        }
+        .action-tile-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-bottom: 2px;
+        }
+
+        /* ===== NATIVE APP SEGMENTED CONTROL DOCK ===== */
+        [data-testid="stSegmentedControl"] {
+            display: flex !important;
+            justify-content: stretch !important;
+            margin-bottom: 22px !important;
+            width: 100% !important;
+        }
+        [data-testid="stSegmentedControl"] > div {
+            background: rgba(10, 15, 30, 0.85) !important;
+            border: 1px solid rgba(99, 102, 241, 0.22) !important;
+            border-radius: 16px !important;
+            padding: 6px !important;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35) !important;
+            gap: 6px !important;
+            width: 100% !important;
+            display: flex !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+        }
+        [data-testid="stSegmentedControl"] button {
+            flex: 1 !important;
+            border-radius: 12px !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            padding: 10px 14px !important;
+            border: 1px solid transparent !important;
+            color: #94A3B8 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        }
+        [data-testid="stSegmentedControl"] button:hover {
+            background: rgba(99, 102, 241, 0.15) !important;
+            color: #FFFFFF !important;
+            border-color: rgba(99, 102, 241, 0.25) !important;
+            transform: none !important;
+        }
+        [data-testid="stSegmentedControl"] button[aria-checked="true"],
+        [data-testid="stSegmentedControl"] button[data-active="true"] {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.75) 0%, rgba(139, 92, 246, 0.7) 100%) !important;
+            color: #FFFFFF !important;
+            font-weight: 800 !important;
+            border: 1px solid rgba(129, 140, 248, 0.7) !important;
+            box-shadow: 0 4px 18px rgba(99, 102, 241, 0.45) !important;
+            transform: none !important;
         }
 
         /* ===== HEADER BAR ===== */
@@ -894,117 +990,299 @@ else:
 
 
 # ---------------------------------------------------
-# CONTROLLER: LOGIN SCREEN (IMAGE 1)
+# CONTROLLER: LOGIN SCREEN (LOGO INTRO + CLEAN MINIMALIST LOGIN)
 # ---------------------------------------------------
 def render_login_view():
-    # Background animated orbs
+    # 1. Cinematic Splash Overlay — Logo Appears First When App Loads
     st.html(
         """
-        <div class="login-bg-effects">
-            <div class="login-orb login-orb-1"></div>
-            <div class="login-orb login-orb-2"></div>
-            <div class="login-orb login-orb-3"></div>
+        <div class="splash-overlay">
+            <div class="splash-content">
+                <div class="splash-logo-container">
+                    <div class="splash-logo-pulse"></div>
+                    <div class="splash-logo-box">🧠</div>
+                </div>
+                <div class="splash-title">SkillGap <span class="splash-ai">AI</span></div>
+                <div class="splash-sub">Advanced Career Intelligence</div>
+                <div class="splash-bar-outer">
+                    <div class="splash-bar-fill"></div>
+                </div>
+            </div>
         </div>
         """
     )
 
-    col_left, col_right = st.columns([1.2, 1], gap="large")
+    # 2. Clean, Centered Luxury Login Interface
+    _, col_center, _ = st.columns([1, 1.5, 1])
 
-    with col_left:
+    with col_center:
         st.html(
             """
-            <div style="padding: 30px 20px 30px 30px;">
-                <div class="login-brand-badge">
-                    <span class="badge-dot"></span>
-                    <span>AI-Powered Career Intelligence</span>
-                </div>
-
-                <div class="login-hero-title">
-                    Discover Your<br>
-                    <span class="title-gradient">Career Potential</span><br>
-                    with AI
-                </div>
-
-                <div class="login-hero-sub">
-                    Upload your resume and let our advanced AI engine analyze your skills,
-                    identify gaps, and map your path to your dream role.
-                </div>
-
-                <div class="login-features">
-                    <div class="login-feature-item">
-                        <div class="feature-icon-circle feature-icon-blue">&#127919;</div>
-                        <div class="feature-text"><span>Smart Skill Extraction</span> &mdash; AI-parsed resume taxonomy</div>
-                    </div>
-                    <div class="login-feature-item">
-                        <div class="feature-icon-circle feature-icon-purple">&#128202;</div>
-                        <div class="feature-text"><span>Gap Analysis</span> &mdash; Match against 500+ job profiles</div>
-                    </div>
-                    <div class="login-feature-item">
-                        <div class="feature-icon-circle feature-icon-emerald">&#128640;</div>
-                        <div class="feature-text"><span>Growth Roadmap</span> &mdash; Personalized learning paths</div>
-                    </div>
-                </div>
-
-                <div class="login-trust-bar">
-                    <div class="trust-stat">
-                        <span class="trust-val">10K+</span>
-                        <span class="trust-label">Resumes Analyzed</span>
-                    </div>
-                    <div class="trust-divider"></div>
-                    <div class="trust-stat">
-                        <span class="trust-val">95%</span>
-                        <span class="trust-label">Match Accuracy</span>
-                    </div>
-                    <div class="trust-divider"></div>
-                    <div class="trust-stat">
-                        <span class="trust-val">500+</span>
-                        <span class="trust-label">Job Profiles</span>
-                    </div>
+            <div class="clean-login-wrapper">
+                <div class="clean-card-header">
+                    <div class="clean-brand-icon">&#129504;</div>
+                    <div class="clean-app-title">SkillGap <span style="background: linear-gradient(135deg, #6366F1, #38BDF8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI</span></div>
+                    <div class="clean-app-sub">Welcome back &bull; Sign in to access your career roadmap</div>
                 </div>
             </div>
             """
         )
 
-    with col_right:
-        st.html(
-            """
-            <div class="login-glass-card">
-                <div class="login-card-header">
-                    <div class="login-card-icon">&#129504;</div>
-                    <div class="login-card-title">Welcome Back</div>
-                    <div class="login-card-sub">Sign in to your SkillGap AI dashboard</div>
+        auth_tab1, auth_tab2, auth_tab3 = st.tabs(["🔐 Sign In", "✨ Create Account", "🔑 Reset Password"])
+
+        # ----------------------------------------------------
+        # TAB 1: SIGN IN (CLEAN & DIRECT)
+        # ----------------------------------------------------
+        with auth_tab1:
+            login_ident = st.text_input("Email or Username", placeholder="you@example.com", key="login_ident")
+            login_pwd = st.text_input("Password", type="password", placeholder="••••••••", key="login_pwd")
+
+            st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+
+            if st.button("Sign In →", key="btn_signin_db", use_container_width=True):
+                if not login_ident.strip() or not login_pwd.strip():
+                    st.error("⚠️ Please enter your email/username and password.")
+                else:
+                    success, result = database.authenticate_user_db(login_ident, login_pwd)
+                    if success:
+                        st.session_state.logged_in = True
+                        st.session_state.username = result["email"]
+                        st.session_state.user_profile = result
+                        st.success(f"✓ Welcome back, {result.get('full_name', 'Student')}!")
+                        time.sleep(0.3)
+                        st.rerun()
+                    else:
+                        st.error(f"❌ {result}")
+
+            st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+            st.markdown(
+                """
+                <div style="text-align: center; margin-bottom: 8px;">
+                    <span style="font-size: 11px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.08em;">Quick 1-Click Demo Profiles</span>
                 </div>
-            </div>
-            """
-        )
+                """,
+                unsafe_allow_html=True
+            )
 
-        email = st.text_input("Email", placeholder="you@example.com", key="auth_email")
-        password = st.text_input("Password", type="password", placeholder="••••••••", key="auth_pwd")
+            dcol1, dcol2, dcol3 = st.columns(3)
+            with dcol1:
+                if st.button("🎓 Student", key="demo_student_btn", use_container_width=True):
+                    ok, res = database.authenticate_user_db("demo@skillgap.ai", "Password123!")
+                    if ok:
+                        st.session_state.logged_in = True
+                        st.session_state.username = res["email"]
+                        st.session_state.user_profile = res
+                        st.rerun()
+            with dcol2:
+                if st.button("💻 Alex (Frontend)", key="demo_alex_btn", use_container_width=True):
+                    ok, res = database.authenticate_user_db("alex@skillgap.ai", "Password123!")
+                    if ok:
+                        st.session_state.logged_in = True
+                        st.session_state.username = res["email"]
+                        st.session_state.user_profile = res
+                        st.rerun()
+            with dcol3:
+                if st.button("🤖 Priya (AI/ML)", key="demo_priya_btn", use_container_width=True):
+                    ok, res = database.authenticate_user_db("priya@skillgap.ai", "Password123!")
+                    if ok:
+                        st.session_state.logged_in = True
+                        st.session_state.username = res["email"]
+                        st.session_state.user_profile = res
+                        st.rerun()
 
-        st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
+        # ----------------------------------------------------
+        # TAB 2: CREATE ACCOUNT (CLEAN & FAST)
+        # ----------------------------------------------------
+        with auth_tab2:
+            reg_name = st.text_input("Full Name", placeholder="Jane Doe", key="reg_name")
+            reg_email = st.text_input("Email Address", placeholder="jane@example.com", key="reg_email")
 
-        if st.button("Sign In →", key="btn_signin", use_container_width=True):
-            user_str = email.strip().lower() if email.strip() else "you@example.com"
-            pwd_str = password.strip() if password.strip() else "demo123"
-            
-            # Auto-register if not present so any email/password works seamlessly
-            if not login_user(user_str, pwd_str):
-                register_user(user_str, pwd_str)
-            
-            st.session_state.logged_in = True
-            st.session_state.username = user_str
-            st.rerun()
+            rcol1, rcol2 = st.columns(2)
+            with rcol1:
+                reg_role = st.selectbox(
+                    "Target Role",
+                    [
+                        "Full Stack Developer",
+                        "Frontend Engineer",
+                        "Backend Engineer",
+                        "Machine Learning Engineer",
+                        "Data Scientist / Analyst",
+                        "Cloud & DevOps Engineer",
+                        "Cyber Security Analyst",
+                        "Mobile App Developer"
+                    ],
+                    key="reg_role"
+                )
+            with rcol2:
+                reg_exp = st.selectbox(
+                    "Experience Level",
+                    [
+                        "Undergraduate / Fresher",
+                        "Junior (1 - 2 Years)",
+                        "Mid-Level (3 - 5 Years)",
+                        "Senior (5+ Years)"
+                    ],
+                    key="reg_exp"
+                )
 
-        st.markdown('<div class="demo-note">💡 <b>Quick start:</b> use any email & password to explore</div>', unsafe_allow_html=True)
+            reg_pwd = st.text_input("Password", type="password", placeholder="At least 6 characters", key="reg_pwd")
+            reg_pwd_confirm = st.text_input("Confirm Password", type="password", placeholder="Re-type password", key="reg_pwd_confirm")
+
+            # Dynamic Password strength feedback
+            if reg_pwd:
+                score, label = database.check_password_strength(reg_pwd)
+                pcol = "#EF4444" if score < 40 else "#F59E0B" if score < 70 else "#10B981"
+                st.markdown(
+                    f"""
+                    <div style="margin-top: 2px; margin-bottom: 8px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                            <span style="color: #64748B;">Password Security:</span>
+                            <span style="font-weight: 700; color: {pcol};">{label} ({score}%)</span>
+                        </div>
+                        <div style="width: 100%; height: 3px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden;">
+                            <div style="width: {score}%; height: 100%; background: {pcol}; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            if st.button("Create Account →", key="btn_register_db", use_container_width=True):
+                if not reg_name.strip() or not reg_email.strip():
+                    st.error("⚠️ Please fill in all required fields.")
+                elif "@" not in reg_email:
+                    st.error("⚠️ Please enter a valid email address.")
+                elif len(reg_pwd) < 6:
+                    st.error("⚠️ Password must be at least 6 characters.")
+                elif reg_pwd != reg_pwd_confirm:
+                    st.error("⚠️ Passwords do not match.")
+                else:
+                    success, msg = database.register_user_db(
+                        email=reg_email,
+                        password=reg_pwd,
+                        full_name=reg_name,
+                        target_role=reg_role,
+                        experience_level=reg_exp
+                    )
+                    if success:
+                        st.success("✓ " + msg)
+                        ok, user_res = database.authenticate_user_db(reg_email, reg_pwd)
+                        if ok:
+                            st.session_state.logged_in = True
+                            st.session_state.username = user_res["email"]
+                            st.session_state.user_profile = user_res
+                            time.sleep(0.4)
+                            st.rerun()
+                    else:
+                        st.error("❌ " + msg)
+
+        # ----------------------------------------------------
+        # TAB 3: RESET PASSWORD
+        # ----------------------------------------------------
+        with auth_tab3:
+            reset_email = st.text_input("Registered Email", placeholder="you@example.com", key="reset_email")
+            reset_pwd1 = st.text_input("New Password", type="password", placeholder="New password", key="reset_pwd1")
+            reset_pwd2 = st.text_input("Confirm New Password", type="password", placeholder="Repeat new password", key="reset_pwd2")
+
+            if st.button("Update Password →", key="btn_reset_db", use_container_width=True):
+                if not reset_email.strip() or "@" not in reset_email:
+                    st.error("⚠️ Please enter a valid registered email.")
+                elif len(reset_pwd1) < 6:
+                    st.error("⚠️ New password must be at least 6 characters.")
+                elif reset_pwd1 != reset_pwd2:
+                    st.error("⚠️ Passwords do not match.")
+                else:
+                    success, msg = database.reset_password_db(reset_email, reset_pwd1)
+                    if success:
+                        st.success("✓ " + msg)
+                    else:
+                        st.error("❌ " + msg)
 
         st.markdown(
-            '<div class="copyright-text">© 2025 SkillGap AI — Powered by Advanced AI</div>',
+            """
+            <div style="text-align: center; color: #475569; font-size: 11px; margin-top: 24px;">
+                🔒 Secured by SQLite Database &bull; PBKDF2-SHA256 Encryption
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
 
 # ---------------------------------------------------
-# CONTROLLER: SIDEBAR
+# CONTROLLER: APP TOPBAR & HORIZONTAL SEGMENTED DOCK
+# ---------------------------------------------------
+def render_app_topbar_and_dock():
+    profile = st.session_state.get("user_profile") or {}
+    display_name = profile.get("full_name") or st.session_state.username.split("@")[0].capitalize()
+    display_role = profile.get("target_role") or "Full Stack Developer"
+    account_type = profile.get("role") or "Student"
+    initials = "".join([part[0].upper() for part in display_name.split()[:2]]) if display_name else "SG"
+
+    top_col1, top_col2 = st.columns([1.3, 1])
+    with top_col1:
+        st.markdown(
+            f"""
+            <div class="app-brand" style="padding: 4px 0;">
+                <div class="app-brand-icon">&#129504;</div>
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="app-brand-title">SkillGap AI</span>
+                        <span style="font-size: 10px; font-weight: 800; color: #34D399; background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 999px;">● Live App</span>
+                    </div>
+                    <div style="font-size: 12px; color: #64748B; margin-top: 2px;">Career Intelligence &bull; AI Mentor &bull; Learning Roadmaps</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+    with top_col2:
+        c_user, c_logout = st.columns([2.5, 1])
+        with c_user:
+            st.markdown(
+                f"""
+                <div style="display: flex; justify-content: flex-end; padding-top: 6px;">
+                    <div class="app-user-pill">
+                        <div class="app-user-avatar">{initials}</div>
+                        <div>
+                            <div class="app-user-name">{display_name}</div>
+                            <div style="font-size: 10px; color: #A5B4FC; font-weight: 700;">🎯 {display_role}</div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        with c_logout:
+            if st.button("🚪 Logout", key="topbar_logout_btn", use_container_width=True):
+                st.session_state.logged_in = False
+                st.session_state.username = ""
+                st.session_state.user_profile = None
+                st.session_state.analysis_result = None
+                st.session_state.mentor_chat = []
+                st.rerun()
+
+    # Horizontal Native App Segmented Control Dock
+    tabs = ["📈 Overview", "🎯 Skill Analyzer", "📊 Role Analytics", "🧠 AI Mentor", "⚙️ Profile & DB"]
+    active = st.session_state.get("active_tab")
+    if active not in tabs:
+        active = tabs[0]
+
+    choice = st.segmented_control(
+        "App Navigation",
+        options=tabs,
+        default=active,
+        label_visibility="collapsed",
+        key="app_nav_segmented"
+    )
+    if choice and choice != st.session_state.get("active_tab"):
+        st.session_state.active_tab = choice
+        st.rerun()
+
+    return st.session_state.get("active_tab", tabs[0])
+
+
+# ---------------------------------------------------
+# CONTROLLER: SIDEBAR (USER PROFILE INTEGRATED)
 # ---------------------------------------------------
 def render_dashboard_sidebar():
     with st.sidebar:
@@ -1034,23 +1312,37 @@ def render_dashboard_sidebar():
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        user_display = st.session_state.username if st.session_state.username else "you@example.com"
+        profile = st.session_state.get("user_profile") or {}
+        display_name = profile.get("full_name") or st.session_state.username.split("@")[0].capitalize()
+        display_email = profile.get("email") or st.session_state.username or "demo@skillgap.ai"
+        display_role = profile.get("target_role") or "Full Stack Developer"
+        account_type = profile.get("role") or "Student"
+        initials = "".join([part[0].upper() for part in display_name.split()[:2]]) if display_name else "SG"
+
         st.html(
             f"""
-            <div style="background: rgba(15, 20, 40, 0.6); border: 1px solid rgba(99, 102, 241, 0.12); border-radius: 14px; padding: 12px 14px; margin-bottom: 16px;">
-                <div style="font-size: 11px; color: #64748B; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Signed in as</div>
-                <div style="font-size: 13px; font-weight: 700; color: #E2E8F0; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{user_display}</div>
-                <div style="display: flex; align-items: center; gap: 6px; margin-top: 6px;">
-                    <span style="width: 6px; height: 6px; background: #34D399; border-radius: 50%; box-shadow: 0 0 8px #34D399;"></span>
-                    <span style="font-size: 11px; color: #34D399; font-weight: 700;">Pro Plan Active</span>
+            <div style="background: rgba(15, 20, 40, 0.7); border: 1px solid rgba(99, 102, 241, 0.16); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; backdrop-filter: blur(12px);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                    <div style="width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #6366F1, #8B5CF6); display: flex; align-items: center; justify-content: center; font-weight: 800; color: #FFF; font-size: 14px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);">
+                        {initials}
+                    </div>
+                    <div style="overflow: hidden;">
+                        <div style="font-size: 14px; font-weight: 800; color: #F8FAFC; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">{display_name}</div>
+                        <div style="font-size: 11px; color: #94A3B8; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;">{display_email}</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255, 255, 255, 0.06); padding-top: 8px;">
+                    <span style="font-size: 11px; font-weight: 700; color: #A5B4FC;">🎯 {display_role}</span>
+                    <span style="font-size: 10px; font-weight: 800; color: #34D399; background: rgba(16, 185, 129, 0.12); padding: 2px 8px; border-radius: 999px;">{account_type}</span>
                 </div>
             </div>
             """
         )
 
-        if st.button("🚪 Logout", use_container_width=True):
+        if st.button("🚪 Logout", key="sidebar_logout_btn", use_container_width=True):
             st.session_state.logged_in = False
             st.session_state.username = ""
+            st.session_state.user_profile = None
             st.session_state.analysis_result = None
             st.session_state.mentor_chat = []
             st.rerun()
@@ -1059,23 +1351,53 @@ def render_dashboard_sidebar():
 
 
 # ---------------------------------------------------
-# DASHBOARD MODULE 1: ADVANCED OVERVIEW
+# DASHBOARD MODULE 1: ADVANCED OVERVIEW (APP LIKE)
 # ---------------------------------------------------
 def render_overview_view():
-    user_display = st.session_state.username if st.session_state.username else "you@example.com"
-    st.html(
+    profile = st.session_state.get("user_profile") or {}
+    display_name = profile.get("full_name") or st.session_state.username.split("@")[0].capitalize()
+    target_role = profile.get("target_role") or "Full Stack Developer"
+
+    # App Quick Action Grid
+    st.markdown(
         f"""
-        <div class="dash-header-bar">
-            <div class="dash-page-title">
-                <span>📈 Skill Matrix Dashboard</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <div>
+                <h2 style="font-size: 22px; font-weight: 900; color: #FFFFFF; margin: 0; letter-spacing: -0.02em;">Welcome back, {display_name} 👋</h2>
+                <div style="font-size: 13px; color: #94A3B8; margin-top: 2px;">Target Career Track: <b style="color: #A5B4FC;">{target_role}</b></div>
             </div>
-            <div class="status-badge">
-                <span class="pulse-dot"></span>
-                <span>Active Profile: {user_display}</span>
+            <div style="display: flex; gap: 8px;">
+                <span style="font-size: 11px; font-weight: 700; color: #38BDF8; background: rgba(14, 165, 233, 0.12); border: 1px solid rgba(14, 165, 233, 0.25); padding: 4px 12px; border-radius: 999px;">🚀 Career Track Active</span>
             </div>
         </div>
-        """
+        <div style="margin-bottom: 10px;">
+            <div style="font-size: 11px; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">Quick App Actions</div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
+
+    # 4 Interactive Quick Action App Tiles
+    ac1, ac2, ac3, ac4 = st.columns(4)
+    with ac1:
+        if st.button("📄 Scan Resume\nAI skill extraction", key="tile_scan", use_container_width=True):
+            st.session_state.active_tab = "🎯 Skill Analyzer"
+            st.rerun()
+    with ac2:
+        if st.button("🎯 Role Blueprint\n500+ tech specs", key="tile_role", use_container_width=True):
+            st.session_state.active_tab = "📊 Role Analytics"
+            st.rerun()
+    with ac3:
+        if st.button("🗺️ 12-Wk Roadmap\nMilestones & tasks", key="tile_road", use_container_width=True):
+            st.session_state.active_tab = "🎯 Skill Analyzer"
+            st.rerun()
+    with ac4:
+        if st.button("💬 AI Career Mentor\nAdvice & interview prep", key="tile_mentor", use_container_width=True):
+            st.session_state.active_tab = "🧠 AI Mentor"
+            st.rerun()
+
+    st.markdown("<div style='height: 14px;'></div>", unsafe_allow_html=True)
+
 
     result = st.session_state.analysis_result
 
@@ -1488,22 +1810,27 @@ def render_settings_view():
 
 
 # ---------------------------------------------------
-# MAIN APPLICATION ROUTER
+# MAIN APPLICATION ROUTER (NATIVE APP EXPERIENCE)
 # ---------------------------------------------------
 def main():
     if not st.session_state.logged_in:
         render_login_view()
     else:
-        nav = render_dashboard_sidebar()
+        # Desktop Sidebar (maintained for widescreen access)
+        render_dashboard_sidebar()
+
+        # Native App Topbar & Horizontal Segmented App Dock
+        nav = render_app_topbar_and_dock()
+
         if "Overview" in nav:
             render_overview_view()
-        elif "Skills" in nav:
+        elif "Skill Analyzer" in nav or "Skills" in nav:
             render_skills_view()
-        elif "Analytics" in nav:
+        elif "Role Analytics" in nav or "Analytics" in nav:
             render_analytics_view()
-        elif "Learning" in nav:
+        elif "AI Mentor" in nav or "Learning" in nav:
             render_learning_view()
-        elif "Settings" in nav:
+        elif "Profile" in nav or "Settings" in nav:
             render_settings_view()
 
 

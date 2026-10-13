@@ -188,8 +188,10 @@ public class SkillEngine {
         result.missing = missing;
         result.extra = extra;
         result.matchScore = matchScore;
+        result.breadthScore = Math.min(Math.round((float) resumeSkills.size() / 15f * 100f), 100);
         result.employabilityScore = employabilityScore;
         result.roles = roles;
+        result.suggestedRoles = new ArrayList<>(roles);
         return result;
     }
 

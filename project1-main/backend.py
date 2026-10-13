@@ -19,61 +19,56 @@ USER_FILE = "users.json"
 
 
 # ==========================================================
-# USER AUTHENTICATION
+# USER AUTHENTICATION (SQLITE DATABASE ENGINE)
 # ==========================================================
-def load_users():
-    if not os.path.exists(USER_FILE):
-        return {}
+import database
 
-    try:
-        with open(USER_FILE, "r") as file:
-            return json.load(file)
-    except Exception:
-        return {}
+def load_users():
+    """Returns dictionary of users, backed by SQLite database with JSON fallback."""
+    stats = database.get_database_stats()
+    # Read from DB connection
+    conn = database.get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT username, email, password_hash FROM users")
+    users = {}
+    for row in cursor.fetchall():
+        users[row["email"]] = {"password": row["password_hash"]}
+        users[row["username"]] = {"password": row["password_hash"]}
+    conn.close()
+    return users
 
 
 def save_users(users):
-    with open(USER_FILE, "w") as file:
-        json.dump(users, file, indent=4)
+    """Legacy helper maintained for backward compatibility."""
+    if os.path.exists(USER_FILE):
+        try:
+            with open(USER_FILE, "w") as file:
+                json.dump(users, file, indent=4)
+        except Exception:
+            pass
 
 
 def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Secure PBKDF2-HMAC-SHA256 password hashing."""
+    h, _ = database.hash_password_secure(password)
+    return h
 
 
-def register_user(username, password):
-    username = username.strip().lower()
-    password = password.strip()
-
-    if username == "" or password == "":
-        return False
-
-    users = load_users()
-
-    if username in users:
-        return False
-
-    users[username] = {
-        "password": hash_password(password)
-    }
-
-    save_users(users)
-    return True
+def register_user(username, password, full_name="", target_role="Full Stack Developer"):
+    """Registers user in SQLite database."""
+    ok, _ = database.register_user_db(
+        email=username,
+        password=password,
+        full_name=full_name,
+        target_role=target_role
+    )
+    return ok
 
 
 def login_user(username, password):
-    username = username.strip().lower()
-    password = password.strip()
-
-    if username == "" or password == "":
-        return False
-
-    users = load_users()
-
-    if username not in users:
-        return False
-
-    return users[username]["password"] == hash_password(password)
+    """Authenticates user against SQLite database with rate-limiting and lockout."""
+    ok, _ = database.authenticate_user_db(username, password)
+    return ok
 
 
 # ==========================================================
