@@ -133,6 +133,14 @@ jobs:
           [ -f "$SITE_ROOT/app.js" ] && cp "$SITE_ROOT/app.js" _site/ || true
           # Copy api folder if present
           [ -d "$SITE_ROOT/api" ] && cp -r "$SITE_ROOT/api" _site/ || true
+          # Copy APK so download button works on live website
+          if [ -f "artifacts/SkillGapAI-latest.apk" ]; then
+            cp artifacts/SkillGapAI-latest.apk _site/SkillGapAI.apk
+          elif [ -f "SkillGapAI.apk" ]; then
+            cp SkillGapAI.apk _site/SkillGapAI.apk
+          elif [ -f "project1-main/SkillGapAI.apk" ]; then
+            cp project1-main/SkillGapAI.apk _site/SkillGapAI.apk
+          fi
           echo "✅ Site prepared:"
           ls -la _site/
 

@@ -103,6 +103,30 @@ public class AnalyzerFragment extends Fragment {
         return v;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (getActivity() instanceof MainActivity) {
+            MainActivity ma = (MainActivity) getActivity();
+            UserProfile profile = ma.getActiveProfile();
+            if (profile != null && resumeText != null && TextUtils.isEmpty(resumeText.getText())) {
+                resumeText.setText(profile.resumeText);
+                jobDesc.setText(profile.jobDesc);
+            }
+            if (ma.getLatestResult() != null && resultsContainer != null) {
+                displayResults(ma.getLatestResult());
+            }
+        }
+    }
+
+    public void loadProfile(UserProfile profile) {
+        if (resumeText != null && profile != null) {
+            resumeText.setText(profile.resumeText);
+            jobDesc.setText(profile.jobDesc);
+            performAnalysis();
+        }
+    }
+
     private void initViews(View v) {
         resumeText = v.findViewById(R.id.resumeText);
         jobDesc = v.findViewById(R.id.jobDesc);

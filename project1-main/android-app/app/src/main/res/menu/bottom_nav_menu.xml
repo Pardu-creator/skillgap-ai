@@ -1,15 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
+        android:id="@+id/nav_overview"
+        android:icon="@drawable/ic_dashboard"
+        android:title="@string/nav_overview" />
+    <item
         android:id="@+id/nav_analyzer"
-        android:icon="@android:drawable/ic_menu_search"
+        android:icon="@drawable/ic_scan"
         android:title="@string/nav_analyzer" />
     <item
+        android:id="@+id/nav_analytics"
+        android:icon="@drawable/ic_analytics"
+        android:title="@string/nav_analytics" />
+    <item
         android:id="@+id/nav_roadmaps"
-        android:icon="@android:drawable/ic_menu_mapmode"
+        android:icon="@drawable/ic_map"
         android:title="@string/nav_roadmaps" />
     <item
         android:id="@+id/nav_mentor"
-        android:icon="@android:drawable/ic_menu_send"
+        android:icon="@drawable/ic_robot"
         android:title="@string/nav_mentor" />
 </menu>

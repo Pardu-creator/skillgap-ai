@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SkillGap AI - Smart Employability & Career Assessment Platform</title>
-  <meta name="description" content="AI-powered skill gap analyzer, employability scoring engine, career roadmaps, and instant resume match feedback for tech roles.">
+  <title>SkillGap AI • Advanced Career Intelligence & Skill Gap Platform</title>
+  <meta name="description" content="AI-powered skill gap analyzer, role compatibility analytics, 12-week roadmaps, and career mentor chat for tech professionals.">
   
   <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   
   <!-- PDF.js for Direct Client-side Resume Parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -45,52 +45,247 @@
       <div class="brand-icon">
         <i data-lucide="sparkles" style="color: #fff; width: 22px; height: 22px;"></i>
       </div>
-      <span class="brand-text">SkillGap AI</span>
-      <span class="brand-badge">Vercel Ready</span>
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="brand-text">SkillGap AI</span>
+          <span class="brand-badge">● Live Platform</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted); font-weight: 500;">Career Intelligence &bull; AI Mentor &bull; Roadmaps</div>
+      </div>
     </a>
 
+    <!-- Navigation Tabs -->
     <div class="nav-tabs">
-      <button class="nav-tab-btn active" data-tab="tab-analyzer">
+      <button class="nav-tab-btn active" data-tab="tab-overview">
+        <i data-lucide="layout-dashboard" style="width: 16px; height: 16px;"></i>
+        Overview
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-analyzer">
         <i data-lucide="scan" style="width: 16px; height: 16px;"></i>
-        Smart Analyzer
+        Skill Analyzer
+      </button>
+      <button class="nav-tab-btn" data-tab="tab-analytics">
+        <i data-lucide="bar-chart-3" style="width: 16px; height: 16px;"></i>
+        Role Analytics
       </button>
       <button class="nav-tab-btn" data-tab="tab-roadmaps">
         <i data-lucide="map" style="width: 16px; height: 16px;"></i>
-        Career Roadmaps
+        12-Wk Roadmap
       </button>
       <button class="nav-tab-btn" data-tab="tab-mentor">
         <i data-lucide="bot" style="width: 16px; height: 16px;"></i>
         AI Mentor
       </button>
+      <button class="nav-tab-btn" data-tab="tab-settings">
+        <i data-lucide="settings" style="width: 16px; height: 16px;"></i>
+        Profile & DB
+      </button>
     </div>
 
+    <!-- Nav Actions: Auth User Card & Download APK -->
     <div class="nav-actions">
-      <a href="SkillGapAI.apk" download class="btn-secondary" style="text-decoration: none;">
+      <!-- User Profile Pill (Visible when logged in) -->
+      <div id="navUserPill" class="user-pill-container" style="display: flex;">
+        <div class="user-avatar" id="navUserAvatar">DU</div>
+        <div class="user-info">
+          <div class="user-name" id="navUserName">Demo User</div>
+          <div class="user-role" id="navUserRole">🎯 Full Stack Developer</div>
+        </div>
+        <button id="logoutBtn" class="pill-btn-logout" title="Log Out">
+          <i data-lucide="log-out" style="width: 14px; height: 14px;"></i>
+        </button>
+      </div>
+
+      <!-- Sign In Button (Visible when logged out) -->
+      <button id="navLoginBtn" class="btn-primary" style="display: none; padding: 0.55rem 1rem; font-size: 0.85rem;">
+        <i data-lucide="log-in" style="width: 16px; height: 16px;"></i>
+        Sign In / Demo
+      </button>
+
+      <!-- Download APK Button -->
+      <a href="SkillGapAI.apk" download id="downloadApkBtn" class="btn-secondary" style="text-decoration: none;">
         <i data-lucide="smartphone" style="width: 16px; height: 16px;"></i>
         Download APK
       </a>
     </div>
   </nav>
 
-  <!-- Hero Header -->
-  <header class="hero">
-    <div class="hero-pill">
-      <span class="pulse-dot"></span>
-      AI-Powered Career Intelligence 2.0
-    </div>
-    <h1 class="hero-title">
-      Close Your <span class="gradient-text">Skill Gaps</span>.<br>Maximize Your Employability.
-    </h1>
-    <p class="hero-subtitle">
-      Instant resume ATS extraction, real-time job description matching, personalized career roadmaps, and interactive AI career mentorship.
-    </p>
-  </header>
-
-  <!-- Main Content -->
+  <!-- Main Content Container -->
   <main class="main-container">
 
-    <!-- Tab 1: Smart Analyzer -->
-    <div id="tab-analyzer" class="tab-content-panel active">
+    <!-- ======================================================== -->
+    <!-- TAB 1: EXECUTIVE OVERVIEW                                -->
+    <!-- ======================================================== -->
+    <div id="tab-overview" class="tab-content-panel active">
+      
+      <!-- Welcome Hero Banner -->
+      <div class="overview-hero">
+        <div class="overview-hero-text">
+          <h2>Welcome back, <span id="overviewWelcomeName">Demo User</span> 👋</h2>
+          <p>Target Career Track: <strong id="overviewTargetRole" style="color: #A5B4FC;">Full Stack Developer</strong> &bull; Profile updated from latest resume</p>
+        </div>
+        <div class="overview-hero-badges">
+          <span class="hero-status-pill">
+            <span class="pulse-dot"></span>
+            Career Track Active
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Action Tiles (4 Interactive App Tiles) -->
+      <div class="quick-actions-grid">
+        <div class="action-tile" data-jump-tab="tab-analyzer">
+          <div class="action-tile-icon" style="background: rgba(99, 102, 241, 0.15); color: #818CF8;">
+            <i data-lucide="file-text" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div class="action-tile-text">
+            <h4>Scan Resume</h4>
+            <p>ATS skill extraction & match</p>
+          </div>
+          <i data-lucide="chevron-right" class="action-tile-arrow"></i>
+        </div>
+
+        <div class="action-tile" data-jump-tab="tab-analytics">
+          <div class="action-tile-icon" style="background: rgba(6, 182, 212, 0.15); color: #38BDF8;">
+            <i data-lucide="bar-chart-3" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div class="action-tile-text">
+            <h4>Role Blueprint</h4>
+            <p>500+ tech specs & comp</p>
+          </div>
+          <i data-lucide="chevron-right" class="action-tile-arrow"></i>
+        </div>
+
+        <div class="action-tile" data-jump-tab="tab-roadmaps">
+          <div class="action-tile-icon" style="background: rgba(168, 85, 247, 0.15); color: #C084FC;">
+            <i data-lucide="milestone" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div class="action-tile-text">
+            <h4>12-Wk Roadmap</h4>
+            <p>Personalized milestones</p>
+          </div>
+          <i data-lucide="chevron-right" class="action-tile-arrow"></i>
+        </div>
+
+        <div class="action-tile" data-jump-tab="tab-mentor">
+          <div class="action-tile-icon" style="background: rgba(16, 185, 129, 0.15); color: #34D399;">
+            <i data-lucide="bot" style="width: 22px; height: 22px;"></i>
+          </div>
+          <div class="action-tile-text">
+            <h4>AI Career Mentor</h4>
+            <p>Interview prep & advice</p>
+          </div>
+          <i data-lucide="chevron-right" class="action-tile-arrow"></i>
+        </div>
+      </div>
+
+      <!-- 4 High-Tech KPI Metric Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-tile">
+          <div class="kpi-tile-header">
+            <span class="kpi-tile-label">Employability Score</span>
+            <div class="kpi-icon-wrap kpi-icon-indigo">
+              <i data-lucide="award" style="width: 18px; height: 18px;"></i>
+            </div>
+          </div>
+          <div class="kpi-tile-val" id="kpiEmployability">84%</div>
+          <span class="kpi-pill pill-indigo">▲ Top 12% Candidate</span>
+        </div>
+
+        <div class="kpi-tile">
+          <div class="kpi-tile-header">
+            <span class="kpi-tile-label">Resume Match Index</span>
+            <div class="kpi-icon-wrap kpi-icon-purple">
+              <i data-lucide="scan" style="width: 18px; height: 18px;"></i>
+            </div>
+          </div>
+          <div class="kpi-tile-val" id="kpiMatchIndex">78%</div>
+          <span class="kpi-pill pill-purple">● High Role Fit</span>
+        </div>
+
+        <div class="kpi-tile">
+          <div class="kpi-tile-header">
+            <span class="kpi-tile-label">Verified Skills</span>
+            <div class="kpi-icon-wrap kpi-icon-emerald">
+              <i data-lucide="check-circle-2" style="width: 18px; height: 18px;"></i>
+            </div>
+          </div>
+          <div class="kpi-tile-val" id="kpiSkillsCount">12</div>
+          <span class="kpi-pill pill-emerald">✓ Verified Core</span>
+        </div>
+
+        <div class="kpi-tile">
+          <div class="kpi-tile-header">
+            <span class="kpi-tile-label">Skill Gaps to Close</span>
+            <div class="kpi-icon-wrap kpi-icon-amber">
+              <i data-lucide="alert-circle" style="width: 18px; height: 18px;"></i>
+            </div>
+          </div>
+          <div class="kpi-tile-val" id="kpiGapsCount">3</div>
+          <span class="kpi-pill pill-amber">⚡ Learning Targets</span>
+        </div>
+      </div>
+
+      <!-- 2-Column Overview Landscape -->
+      <div class="overview-landscape-grid">
+        <!-- Left: Skill Landscape & Proficiency -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i data-lucide="trending-up" style="width: 20px; height: 20px; color: #818CF8;"></i>
+              Skill Landscape & Proficiency
+            </h3>
+            <span style="font-size: 11px; color: var(--text-muted); font-weight: 600;">Live Inventory</span>
+          </div>
+
+          <div id="overviewSkillRows" class="overview-skills-list">
+            <!-- Dynamically populated -->
+          </div>
+
+          <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border-subtle);">
+            <h4 style="font-size: 0.9rem; font-weight: 700; color: #FDA4AF; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="alert-circle" style="width: 16px; height: 16px;"></i>
+              High Priority Gaps to Close
+            </h4>
+            <div id="overviewGapRows" class="overview-skills-list">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Market Role Fit & Salary Intelligence -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <i data-lucide="briefcase" style="width: 20px; height: 20px; color: #38BDF8;"></i>
+              Job Match Intelligence & Market Salary
+            </h3>
+          </div>
+
+          <div id="overviewRoleCards" class="overview-roles-list">
+            <!-- Dynamically populated -->
+          </div>
+
+          <!-- AI Recommendation Box -->
+          <div class="ai-rec-box">
+            <div class="ai-rec-title">
+              <i data-lucide="sparkles" style="width: 16px; height: 16px;"></i>
+              AI Recommendation
+            </div>
+            <div class="ai-rec-text" id="overviewAiRecommendation">
+              You possess verified proficiency in core technologies. Master <strong>Docker</strong> and <strong>AWS</strong> over the next 4 weeks to unlock senior tier salary compensation ($130k+).
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+
+    <!-- ======================================================== -->
+    <!-- TAB 2: SMART SKILL ANALYZER                              -->
+    <!-- ======================================================== -->
+    <div id="tab-analyzer" class="tab-content-panel">
       <div class="app-grid">
         
         <!-- Left Column: Input Form -->
@@ -134,11 +329,21 @@
 
           <!-- Job Description Textarea -->
           <div class="form-group">
-            <label class="form-label" for="jobDesc">
-              <span>Target Job Description (Optional)</span>
-              <span style="font-size: 0.75rem; color: var(--text-muted);">Leave blank for role benchmarks</span>
-            </label>
-            <textarea id="jobDesc" class="custom-textarea" placeholder="Paste target job requirements / description here..."></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+              <label class="form-label" for="jobDesc" style="margin-bottom: 0;">
+                <span>Target Job Description (Optional)</span>
+              </label>
+              <!-- Role Template Select -->
+              <select id="roleTemplateSelect" class="template-select">
+                <option value="">-- Role Templates --</option>
+                <option value="fullstack">Full Stack Engineer (Node, React, SQL, Docker)</option>
+                <option value="frontend">Frontend Engineer (React, TypeScript, Next.js, CSS)</option>
+                <option value="backend">Backend Engineer (Python, FastAPI, Postgres, Docker)</option>
+                <option value="ml">Machine Learning Engineer (PyTorch, TF, Docker, AWS)</option>
+                <option value="devops">DevOps & Cloud Engineer (AWS, Kubernetes, CI/CD, Terraform)</option>
+              </select>
+            </div>
+            <textarea id="jobDesc" class="custom-textarea" placeholder="Paste target job requirements / description here or pick a template above..."></textarea>
           </div>
 
           <!-- Submit Button -->
@@ -286,49 +491,93 @@
       </div>
     </div>
 
-    <!-- Tab 2: Career Roadmaps -->
-    <div id="tab-roadmaps" class="tab-content-panel">
-      <div class="glass-card" style="max-width: 860px; margin: 0 auto;">
-        <div class="card-header">
+
+    <!-- ======================================================== -->
+    <!-- TAB 3: ROLE ANALYTICS & 500+ TECH SPECS                   -->
+    <!-- ======================================================== -->
+    <div id="tab-analytics" class="tab-content-panel">
+      <div style="margin-bottom: 1.5rem;">
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #fff;">📊 Role Compatibility & 500+ Tech Blueprints</h2>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">Real-time market alignment, salary intelligence, and technical architecture specifications for in-demand roles.</p>
+      </div>
+
+      <!-- Role Cards Grid -->
+      <div id="analyticsRolesGrid" class="analytics-roles-grid">
+        <!-- Dynamically generated 9 role cards -->
+      </div>
+
+      <!-- Interactive Blueprint Deep Dive -->
+      <div class="glass-card" style="margin-top: 2rem;">
+        <div class="card-header" style="flex-wrap: wrap; gap: 1rem;">
           <h3 class="card-title">
-            <i data-lucide="milestone" style="width: 20px; height: 20px;"></i>
-            Tailored Career Upskilling Roadmap
+            <i data-lucide="code-2" style="width: 20px; height: 20px; color: #38BDF8;"></i>
+            Role Technical Blueprint & Requirements
           </h3>
-          <span style="font-size: 0.8rem; color: var(--text-muted);">Step-by-Step Learning Timeline</span>
+          <div id="blueprintRoleChips" class="preset-chips">
+            <!-- Filter chips populated by JS -->
+          </div>
         </div>
 
-        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
-          This roadmap dynamically highlights what to learn first to transform your resume into a top-tier candidate profile.
-        </p>
-
-        <div id="roadmapList" class="roadmap-timeline">
-          <!-- Populated dynamically via JS -->
-          <div class="timeline-step">
-            <div class="timeline-node"></div>
-            <div class="timeline-content">
-              <h5>Phase 1: Foundation & High-Priority Gaps (Weeks 1-3)</h5>
-              <p>Analyze your resume first to generate personalized skill progression milestones.</p>
-              <div class="timeline-tags">
-                <span class="timeline-tag">Core Fundamentals</span>
-                <span class="timeline-tag">Hands-on Exercises</span>
-              </div>
-            </div>
-          </div>
+        <div id="blueprintDetails" class="blueprint-details-container">
+          <!-- Populated dynamically -->
         </div>
       </div>
     </div>
 
-    <!-- Tab 3: AI Mentor Chat -->
+
+    <!-- ======================================================== -->
+    <!-- TAB 4: CAREER ROADMAPS (DYNAMIC 12-WEEK TIMELINE)        -->
+    <!-- ======================================================== -->
+    <div id="tab-roadmaps" class="tab-content-panel">
+      <div class="glass-card" style="max-width: 900px; margin: 0 auto;">
+        <div class="card-header" style="flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <h3 class="card-title">
+              <i data-lucide="milestone" style="width: 20px; height: 20px;"></i>
+              Tailored 12-Week Career Upskilling Roadmap
+            </h3>
+            <span style="font-size: 0.8rem; color: var(--text-muted);" id="roadmapRoleSubtitle">Targeting: Full Stack Developer</span>
+          </div>
+          <button id="exportRoadmapBtn" class="btn-secondary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem;">
+            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+            Export Roadmap
+          </button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; background: rgba(15, 23, 42, 0.4); padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <div style="font-size: 0.85rem; color: var(--text-secondary);">
+            Progress: <strong id="roadmapProgressText" style="color: #34D399;">0 of 5 Milestones Completed</strong>
+          </div>
+          <div style="width: 160px; height: 8px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden;">
+            <div id="roadmapProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #6366f1, #10b981); transition: width 0.3s ease;"></div>
+          </div>
+        </div>
+
+        <div id="roadmapList" class="roadmap-timeline">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ======================================================== -->
+    <!-- TAB 5: AI MENTOR CHAT                                    -->
+    <!-- ======================================================== -->
     <div id="tab-mentor" class="tab-content-panel">
       <div class="glass-card" style="max-width: 860px; margin: 0 auto;">
         <div class="card-header">
-          <h3 class="card-title">
-            <i data-lucide="bot" style="width: 20px; height: 20px;"></i>
-            AI Career Advisor & Interview Mentor
-          </h3>
-          <span class="hero-pill" style="margin: 0; padding: 0.25rem 0.65rem;">
-            <span class="pulse-dot"></span> Online
-          </span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3 class="card-title">
+              <i data-lucide="bot" style="width: 20px; height: 20px;"></i>
+              AI Career Advisor & Interview Mentor
+            </h3>
+            <span class="hero-pill" style="margin: 0; padding: 0.25rem 0.65rem;">
+              <span class="pulse-dot"></span> Online
+            </span>
+          </div>
+          <button id="clearChatBtn" class="pill-btn-logout" title="Clear Chat History" style="border-radius: var(--radius-sm); padding: 4px 10px; font-size: 0.75rem;">
+            <i data-lucide="refresh-cw" style="width: 12px; height: 12px;"></i> Clear
+          </button>
         </div>
 
         <!-- Chat Container -->
@@ -336,7 +585,7 @@
           <div id="chatMessages" class="chat-messages">
             <!-- Initial Greeting -->
             <div class="chat-bubble ai">
-              👋 Hello! I am your <strong>AI Career Mentor</strong>. Run an analysis or click one of the quick questions below to get expert resume, interview, and roadmapping advice!
+              👋 Hello! I am your <strong>AI Career Mentor</strong>. I have analyzed your background and I am ready to help you with technical interview prep, high-impact resume improvements, and personalized week-by-week learning roadmaps. Pick a question below or ask anything!
             </div>
           </div>
 
@@ -345,6 +594,8 @@
             <button class="chip-btn">🎯 How can I improve my score?</button>
             <button class="chip-btn">🚀 What is the best learning roadmap?</button>
             <button class="chip-btn">💼 Give me interview questions for my role</button>
+            <button class="chip-btn">📄 How do I beat ATS scanners?</button>
+            <button class="chip-btn">⚡ What portfolio projects should I build?</button>
           </div>
 
           <!-- Input Bar -->
@@ -358,17 +609,197 @@
       </div>
     </div>
 
+
+    <!-- ======================================================== -->
+    <!-- TAB 6: SETTINGS & DATABASE PROFILE                       -->
+    <!-- ======================================================== -->
+    <div id="tab-settings" class="tab-content-panel">
+      <div class="glass-card" style="max-width: 860px; margin: 0 auto;">
+        <div class="card-header">
+          <h3 class="card-title">
+            <i data-lucide="settings" style="width: 20px; height: 20px;"></i>
+            Platform Settings & Account Profile
+          </h3>
+        </div>
+
+        <!-- Profile Details -->
+        <div class="settings-card">
+          <h4 class="section-title" style="margin-bottom: 20px;">User & Target Career Profile</h4>
+          
+          <div class="settings-row">
+            <span class="settings-label">User Account</span>
+            <span class="settings-value" id="settingsUserEmail">demo@skillgap.ai</span>
+          </div>
+          
+          <div class="settings-row">
+            <span class="settings-label">Target Role Track</span>
+            <select id="settingsRoleSelect" class="template-select" style="max-width: 280px;">
+              <option value="Full Stack Developer">Full Stack Developer</option>
+              <option value="Frontend Engineer">Frontend Engineer</option>
+              <option value="Backend Engineer">Backend Engineer</option>
+              <option value="Machine Learning Engineer">Machine Learning Engineer</option>
+              <option value="Data Scientist / Analyst">Data Scientist / Analyst</option>
+              <option value="Cloud & DevOps Engineer">Cloud & DevOps Engineer</option>
+              <option value="Cyber Security Analyst">Cyber Security Analyst</option>
+              <option value="Mobile App Developer">Mobile App Developer</option>
+              <option value="AI/LLM Engineer">AI/LLM Engineer</option>
+            </select>
+          </div>
+
+          <div class="settings-row">
+            <span class="settings-label">Active Resume Profile</span>
+            <span class="settings-value" id="settingsActiveResume">Default Candidate Baseline</span>
+          </div>
+
+          <div class="settings-row">
+            <span class="settings-label">AI Engine Status</span>
+            <span class="settings-value" style="color: #34D399;">● Gemini 2.0 Flash + Heuristic Engine Active</span>
+          </div>
+
+          <div class="settings-row">
+            <span class="settings-label">Security & Database</span>
+            <span class="settings-value" style="color: #A5B4FC;">SQLite PBKDF2-SHA256 &bull; 256-Bit SSL</span>
+          </div>
+        </div>
+
+        <!-- System Controls -->
+        <div class="settings-card" style="margin-top: 1.5rem;">
+          <h4 class="section-title" style="margin-bottom: 14px;">Data & Cache Management</h4>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">Switch between test candidates or reset cached resume analysis data.</p>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button id="btnReloadSample" class="btn-secondary" style="font-size: 0.85rem;">
+              <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i> Reload Demo Data
+            </button>
+            <button id="btnClearData" class="pill-btn-logout" style="border-radius: var(--radius-sm); padding: 8px 16px; font-size: 0.85rem;">
+              <i data-lucide="log-out" style="width: 14px; height: 14px;"></i> Reset All Session Data
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </main>
+
+  <!-- ======================================================== -->
+  <!-- AUTH MODAL (SIGN IN / CREATE ACCOUNT / DEMO LOGIN)       -->
+  <!-- ======================================================== -->
+  <div id="authModal" class="auth-modal-overlay">
+    <div class="auth-modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="brand-icon" style="width: 32px; height: 32px;">
+            <i data-lucide="lock" style="color: #fff; width: 16px; height: 16px;"></i>
+          </div>
+          <h3 style="margin: 0; font-size: 1.15rem; color: #fff;">SkillGap AI Access</h3>
+        </div>
+        <button id="closeAuthModalBtn" class="modal-close-btn">&times;</button>
+      </div>
+
+      <!-- Auth Tabs -->
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" data-auth-tab="signin">Sign In</button>
+        <button class="auth-tab-btn" data-auth-tab="register">Create Account</button>
+        <button class="auth-tab-btn" data-auth-tab="reset">Reset Password</button>
+      </div>
+
+      <!-- Tab: Sign In -->
+      <div id="authTabSignin" class="auth-tab-panel active">
+        <!-- Quick Demo Profiles Section -->
+        <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 1rem;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: #A5B4FC; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">⚡ Quick One-Click Demo Profiles</div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="demo-profile-btn" data-demo="demo">👤 Demo User</button>
+            <button class="demo-profile-btn" data-demo="alex">💻 Alex (Frontend)</button>
+            <button class="demo-profile-btn" data-demo="priya">🤖 Priya (AI/ML)</button>
+          </div>
+        </div>
+
+        <form id="signinForm">
+          <div class="form-group">
+            <label class="form-label" for="signinEmail">Email Address or Username</label>
+            <input type="text" id="signinEmail" class="custom-textarea" style="height: 42px; padding: 0.5rem 0.85rem;" placeholder="demo@skillgap.ai" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="signinPassword">Password</label>
+            <input type="password" id="signinPassword" class="custom-textarea" style="height: 42px; padding: 0.5rem 0.85rem;" placeholder="Password123!" required>
+          </div>
+          <button type="submit" class="btn-primary" style="width: 100%; margin-top: 0.5rem;">
+            Sign In to Dashboard
+          </button>
+        </form>
+      </div>
+
+      <!-- Tab: Create Account -->
+      <div id="authTabRegister" class="auth-tab-panel">
+        <form id="registerForm">
+          <div class="form-group">
+            <label class="form-label" for="regName">Full Name</label>
+            <input type="text" id="regName" class="custom-textarea" style="height: 42px; padding: 0.5rem 0.85rem;" placeholder="e.g. Jordan Lee" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regEmail">Email Address</label>
+            <input type="email" id="regEmail" class="custom-textarea" style="height: 42px; padding: 0.5rem 0.85rem;" placeholder="jordan@example.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regPassword">Password</label>
+            <input type="password" id="regPassword" class="custom-textarea" style="height: 42px; padding: 0.5rem 0.85rem;" placeholder="Choose a strong password" required>
+            <!-- Password Strength Bar -->
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 6px;">
+              <div style="flex: 1; height: 5px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; margin-right: 10px;">
+                <div id="pwdStrengthBar" style="width: 0%; height: 100%; transition: width 0.3s ease, background 0.3s ease;"></div>
+              </div>
+              <span id="pwdStrengthText" style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">Empty</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="regRole">Target Career Track</label>
+            <select id="regRole" class="template-select" style="width: 100%; height: 42px;">
+              <option value="Full Stack Developer">Full Stack Developer</option>
+              <option value="Frontend Engineer">Frontend Engineer</option>
+              <option value="Backend Engineer">Backend Engineer</option>
+              <option value="Machine Learning Engineer">Machine Learning Engineer</option>
+              <option value="Data Scientist / Analyst">Data Scientist / Analyst</option>
+              <option value="Cloud & DevOps Engineer">Cloud & DevOps Engineer</option>
+              <option value="Cyber Security Analyst">Cyber Security Analyst</option>
+              <option value="Mobile App Developer">Mobile App Developer</option>
+              <option value="AI/LLM Engineer">AI/LLM Engineer</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-primary" style="width: 100%; margin-top: 0.5rem;">
+            Create Free Account
+          </button>
+        </form>
+      </div>
+
+      <!-- Tab: Reset Password -->
+      <div id="authTabReset" class="auth-tab-panel">
+        <form id="resetForm">
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">Enter your account email to receive a password recovery verification link.</p>
+          <div class="form-group">
+            <label class="form-label" for="resetEmail">Email Address</label>
+            <input type="email" id="resetEmail" class="custom-textarea" style="height: 42px; padding: 0.5rem 0.85rem;" placeholder="you@example.com" required>
+          </div>
+          <button type="submit" class="btn-primary" style="width: 100%; margin-top: 0.5rem;">
+            Send Password Recovery Link
+          </button>
+        </form>
+      </div>
+
+      <div style="text-align: center; color: var(--text-muted); font-size: 0.75rem; margin-top: 1.25rem;">
+        🔒 Secured by SQLite & Local PBKDF2-SHA256 Encryption
+      </div>
+    </div>
+  </div>
 
   <!-- Footer -->
   <footer class="app-footer">
-    <p>⚡ SkillGap AI • Production Web Platform • Built for Vercel & Mobile</p>
+    <p>⚡ SkillGap AI • Production Web Platform • Built for Vercel, GitHub Pages & Mobile</p>
   </footer>
 
   <!-- Scripts -->
   <script src="app.js"></script>
   <script>
-    // Initialize Lucide Icons
     if (window.lucide) {
       window.lucide.createIcons();
     }

@@ -2,9 +2,35 @@
     <string name="app_name">SkillGap AI</string>
 
     <!-- Bottom Nav -->
+    <string name="nav_overview">Overview</string>
     <string name="nav_analyzer">Analyzer</string>
+    <string name="nav_analytics">Analytics</string>
     <string name="nav_roadmaps">Roadmaps</string>
     <string name="nav_mentor">AI Mentor</string>
+
+    <!-- Overview Tab -->
+    <string name="overview_welcome">Welcome back, %s 👋</string>
+    <string name="overview_target_role">Target Career Track: %s</string>
+    <string name="overview_status_active">Career Track Active</string>
+    <string name="action_scan">Scan Resume</string>
+    <string name="action_scan_desc">ATS skill extraction &amp; match</string>
+    <string name="action_analytics">Role Analytics</string>
+    <string name="action_analytics_desc">Benchmark coverage &amp; demand</string>
+    <string name="action_roadmap">12-Wk Roadmap</string>
+    <string name="action_roadmap_desc">Step-by-step career upskilling</string>
+    <string name="action_mentor">AI Career Mentor</string>
+    <string name="action_mentor_desc">Ask advisor &amp; interview prep</string>
+    <string name="quick_candidates">⚡ One-Click Candidate Profiles</string>
+    <string name="candidate_demo">👤 Demo User</string>
+    <string name="candidate_alex">💻 Alex Rivera</string>
+    <string name="candidate_priya">🤖 Priya Sharma</string>
+
+    <!-- Analytics Tab -->
+    <string name="analytics_title">Role Compatibility</string>
+    <string name="analytics_subtitle">Industry benchmark skill analysis</string>
+    <string name="select_track">Select Career Track</string>
+    <string name="role_requirements">Core Role Requirements</string>
+    <string name="role_match_rate">Benchmark Match Rate</string>
 
     <!-- Analyzer Tab -->
     <string name="analyzer_title">Resume &amp; Target Role</string>
