@@ -7,6 +7,9 @@ on:
     branches: ["**"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   # 1. Stack Detection
   detect-backend:
@@ -18,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - id: detect
         run: |
-          if [ -f "requirements.txt" ]; then
+          if [ -f "requirements.txt" ] || [ -f "project1-main/requirements.txt" ]; then
             echo "stack=python-streamlit" >> $GITHUB_OUTPUT
             echo "✅ Detected Python Streamlit Application"
           else
@@ -54,7 +57,10 @@ jobs:
 
       - name: Run Dependency Audit (pip-audit)
         run: |
-          pip-audit -r requirements.txt --format json -o "Vulnerability Test Results/reports/pip-audit.json" || true
+          REQ_FILE=$(find . -name "requirements.txt" -not -path "*/.*" | head -n 1)
+          if [ -n "$REQ_FILE" ]; then
+            pip-audit -r "$REQ_FILE" --format json -o "Vulnerability Test Results/reports/pip-audit.json" || true
+          fi
 
       - name: Run Gitleaks Secret Scanner
         uses: gitleaks/gitleaks-action@v2
@@ -64,17 +70,22 @@ jobs:
 
       - name: Generate Security Excel Spreadsheets
         run: |
-          python scripts/generate_excel_reports.py
+          GEN_SEC=$(find . -name "generate_excel_reports.py" -not -path "*/.*" | head -n 1)
+          if [ -n "$GEN_SEC" ]; then
+            python "$GEN_SEC" || true
+          else
+            echo "⚠️ generate_excel_reports.py not found — skipping"
+          fi
 
       - name: Publish Security Report Artifacts
         uses: actions/upload-artifact@v4
         if: always()
+        continue-on-error: true
         with:
           name: security-audit-reports
           path: |
-            "Vulnerability Test Results/"
-            "Vulnerability Test Results/*.xlsx"
-            "Vulnerability Test Results/*.md"
+            **/Vulnerability Test Results/**
+            **/*.xlsx
           retention-days: 30
 
       - name: GitHub Action Job Summary

@@ -296,7 +296,11 @@ jobs:
         run: |
           mkdir -p load-tests/reports
           LOAD_SCRIPT=$(find . -name "load-test.js" | head -n 1)
-          k6 run --env BASE_URL=http://localhost:8501 --out json=load-tests/reports/load-test-raw.json "$LOAD_SCRIPT" || true
+          if [ -n "$LOAD_SCRIPT" ]; then
+            k6 run --env BASE_URL=http://localhost:8501 --out json=load-tests/reports/load-test-raw.json "$LOAD_SCRIPT" || true
+          else
+            echo "⚠️ load-test.js not found, skipping k6 execution"
+          fi
 
       - name: Upload Load Test Reports Artifact
         uses: actions/upload-artifact@v4
