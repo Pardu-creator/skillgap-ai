@@ -1,4 +1,11 @@
 <resources>
+    <!-- Alias used by SplashActivity -->
+    <style name="Theme.SkillGapAI.NoActionBar" parent="Theme.SkillGapAI">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+
     <style name="Theme.SkillGapAI" parent="Theme.Material3.Dark.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_variant</item>

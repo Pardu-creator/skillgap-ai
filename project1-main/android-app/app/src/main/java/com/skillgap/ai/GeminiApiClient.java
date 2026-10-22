@@ -21,18 +21,20 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 /**
- * Centralized Gemini API client.
- * API key is read from BuildConfig (compiled into APK, not in plain text).
+ * SkillGap AI — API client that routes through the Vercel backend.
+ * No API key required in the app — the key is stored securely on the server.
  */
 public class GeminiApiClient {
 
-    private static final String GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=";
+    // ─── Backend URL (Vercel) ──────────────────────────────────
+    private static final String BASE_URL = "https://project1-main.vercel.app";
+    private static final String ANALYZE_URL = BASE_URL + "/api/analyze";
+    private static final String CHAT_URL    = BASE_URL + "/api/chat";
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
     private final OkHttpClient client;
     private final ExecutorService executor;
     private final Handler mainHandler;
-    private final String apiKey;
     private final Gson gson;
 
     public GeminiApiClient() {
@@ -42,7 +44,6 @@ public class GeminiApiClient {
                 .build();
         executor = Executors.newCachedThreadPool();
         mainHandler = new Handler(Looper.getMainLooper());
-        apiKey = BuildConfig.GEMINI_API_KEY;
         gson = new Gson();
     }
 
@@ -55,8 +56,20 @@ public class GeminiApiClient {
     public void analyzeResume(String resumeText, String jobDesc, AnalysisResult analysis, AnalyzeCallback callback) {
         executor.execute(() -> {
             try {
-                String prompt = buildAnalyzePrompt(resumeText, jobDesc, analysis);
-                String responseText = callGemini(prompt, 0.6, 1200, true);
+                // Build request body for /api/analyze
+                JsonObject body = new JsonObject();
+                body.addProperty("resumeText", resumeText != null ? resumeText : "");
+                body.addProperty("jobDesc", jobDesc != null ? jobDesc : "");
+                body.addProperty("matchScore", analysis.matchScore);
+                body.addProperty("employabilityScore", analysis.employabilityScore);
+
+                // Add matched/missing/extra skills
+                body.add("matched", listToJsonArray(analysis.matched));
+                body.add("missing", listToJsonArray(analysis.missing));
+                body.add("extra", listToJsonArray(analysis.extra));
+                body.add("roles", listToJsonArray(analysis.roles));
+
+                String responseText = postToBackend(ANALYZE_URL, body.toString());
 
                 AiFeedback feedback = parseAiFeedback(responseText);
                 mainHandler.post(() -> callback.onSuccess(feedback));
@@ -76,130 +89,64 @@ public class GeminiApiClient {
     public void chat(String message, AnalysisResult analysis, ChatCallback callback) {
         executor.execute(() -> {
             try {
-                String prompt = buildChatPrompt(message, analysis);
-                String responseText = callGemini(prompt, 0.8, 1024, false);
-                mainHandler.post(() -> callback.onSuccess(responseText));
+                // Build request body for /api/chat
+                JsonObject body = new JsonObject();
+                body.addProperty("message", message);
+
+                if (analysis != null) {
+                    JsonObject analysisObj = new JsonObject();
+                    analysisObj.addProperty("employabilityScore", analysis.employabilityScore);
+                    analysisObj.addProperty("matchScore", analysis.matchScore);
+                    analysisObj.add("matched", listToJsonArray(analysis.matched));
+                    analysisObj.add("missing", listToJsonArray(analysis.missing));
+                    analysisObj.add("extra", listToJsonArray(analysis.extra));
+                    analysisObj.add("roles", listToJsonArray(analysis.roles));
+                    body.add("analysis", analysisObj);
+                }
+
+                String responseText = postToBackend(CHAT_URL, body.toString());
+
+                // Parse { "reply": "..." }
+                JsonObject json = JsonParser.parseString(responseText).getAsJsonObject();
+                String reply = json.has("reply") ? json.get("reply").getAsString()
+                        : "I'm here to help with your career questions!";
+
+                mainHandler.post(() -> callback.onSuccess(reply));
+
             } catch (Exception e) {
                 mainHandler.post(() -> callback.onError(e.getMessage()));
             }
         });
     }
 
-    // ─── Core API Call ────────────────────────────────────────
-    private String callGemini(String prompt, double temperature, int maxTokens, boolean jsonMode) throws IOException {
-        JsonObject userPart = new JsonObject();
-        userPart.addProperty("text", prompt);
-
-        JsonObject userContent = new JsonObject();
-        userContent.addProperty("role", "user");
-        JsonArray parts = new JsonArray();
-        parts.add(userPart);
-        userContent.add("parts", parts);
-
-        JsonArray contents = new JsonArray();
-        contents.add(userContent);
-
-        JsonObject genConfig = new JsonObject();
-        genConfig.addProperty("temperature", temperature);
-        genConfig.addProperty("maxOutputTokens", maxTokens);
-        genConfig.addProperty("topP", 0.9);
-        if (jsonMode) {
-            genConfig.addProperty("responseMimeType", "application/json");
-        }
-
-        JsonObject body = new JsonObject();
-        body.add("contents", contents);
-        body.add("generationConfig", genConfig);
-
+    // ─── Core HTTP POST ────────────────────────────────────────
+    private String postToBackend(String url, String jsonBody) throws IOException {
         Request request = new Request.Builder()
-                .url(GEMINI_URL + apiKey)
-                .post(RequestBody.create(body.toString(), JSON))
+                .url(url)
+                .post(RequestBody.create(jsonBody, JSON))
+                .addHeader("Content-Type", "application/json")
                 .build();
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("API error: " + response.code());
+                throw new IOException("Server error: " + response.code());
             }
-            String responseBody = response.body().string();
-            JsonObject json = JsonParser.parseString(responseBody).getAsJsonObject();
-            return json.getAsJsonArray("candidates")
-                    .get(0).getAsJsonObject()
-                    .getAsJsonObject("content")
-                    .getAsJsonArray("parts")
-                    .get(0).getAsJsonObject()
-                    .get("text").getAsString();
+            return response.body().string();
         }
-    }
-
-    // ─── Prompt Builders ──────────────────────────────────────
-    private String buildAnalyzePrompt(String resumeText, String jobDesc, AnalysisResult analysis) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("You are an expert ATS resume reviewer and career coach. Analyze this resume against the target job description.\n\n");
-        sb.append("RESUME:\n").append(resumeText.length() > 3000 ? resumeText.substring(0, 3000) : resumeText).append("\n\n");
-
-        if (jobDesc != null && !jobDesc.isEmpty()) {
-            sb.append("TARGET JOB DESCRIPTION:\n").append(jobDesc.length() > 1500 ? jobDesc.substring(0, 1500) : jobDesc).append("\n\n");
-        } else {
-            sb.append("No specific job description provided — give general career improvement advice.\n\n");
-        }
-
-        sb.append("SKILL ANALYSIS (already computed):\n");
-        sb.append("- Matched Skills: ").append(listJoin(analysis.matched)).append("\n");
-        sb.append("- Missing Skills: ").append(listJoin(analysis.missing)).append("\n");
-        sb.append("- Extra Skills: ").append(listJoin(analysis.extra)).append("\n");
-        sb.append("- Match Score: ").append(analysis.matchScore).append("%\n");
-        sb.append("- Employability Score: ").append(analysis.employabilityScore).append("%\n");
-        sb.append("- Suggested Roles: ").append(listJoin(analysis.roles)).append("\n\n");
-
-        sb.append("Provide your response in EXACTLY this JSON format (no markdown, just raw JSON):\n");
-        sb.append("{\n");
-        sb.append("  \"overallVerdict\": \"A one-line verdict\",\n");
-        sb.append("  \"resumeStrengths\": [\"strength 1\", \"strength 2\", \"strength 3\"],\n");
-        sb.append("  \"criticalImprovements\": [\"improvement 1\", \"improvement 2\", \"improvement 3\"],\n");
-        sb.append("  \"atsScore\": 72,\n");
-        sb.append("  \"atsTips\": [\"tip 1\", \"tip 2\"],\n");
-        sb.append("  \"interviewTopics\": [\"topic 1\", \"topic 2\", \"topic 3\"]\n");
-        sb.append("}");
-
-        return sb.toString();
-    }
-
-    private String buildChatPrompt(String message, AnalysisResult analysis) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("You are SkillGap AI's Career Mentor — an expert AI career advisor specializing in tech industry careers, resume optimization, interview preparation, and skill development roadmaps.\n\n");
-
-        if (analysis != null) {
-            sb.append("CANDIDATE ANALYSIS DATA:\n");
-            sb.append("- Employability Score: ").append(analysis.employabilityScore).append("%\n");
-            sb.append("- Target Role Match: ").append(analysis.matchScore).append("%\n");
-            sb.append("- Matched Skills: ").append(listJoin(analysis.matched)).append("\n");
-            sb.append("- Missing Skill Gaps: ").append(listJoin(analysis.missing)).append("\n");
-            sb.append("- Additional Skills: ").append(listJoin(analysis.extra)).append("\n");
-            sb.append("- Suggested Roles: ").append(listJoin(analysis.roles)).append("\n");
-            sb.append("- Total Resume Skills: ").append(analysis.resumeSkills.size()).append("\n\n");
-        }
-
-        sb.append("GUIDELINES:\n");
-        sb.append("- Give specific, actionable advice based on the candidate's data\n");
-        sb.append("- Use **bold** for emphasis, bullet points, numbered lists\n");
-        sb.append("- Keep responses concise but thorough (150-300 words)\n");
-        sb.append("- Be encouraging but honest about gaps\n\n");
-
-        sb.append("User question: ").append(message);
-
-        return sb.toString();
     }
 
     // ─── Helpers ──────────────────────────────────────────────
-    private String listJoin(List<String> list) {
-        if (list == null || list.isEmpty()) return "None";
-        return String.join(", ", list);
+    private JsonArray listToJsonArray(List<String> list) {
+        JsonArray arr = new JsonArray();
+        if (list != null) {
+            for (String s : list) arr.add(s);
+        }
+        return arr;
     }
 
     private AiFeedback parseAiFeedback(String json) {
         AiFeedback feedback = new AiFeedback();
         try {
-            // Try to extract JSON if wrapped in markdown
             String cleaned = json.trim();
             if (cleaned.contains("{")) {
                 cleaned = cleaned.substring(cleaned.indexOf("{"));
@@ -209,13 +156,13 @@ public class GeminiApiClient {
 
             JsonObject obj = JsonParser.parseString(cleaned).getAsJsonObject();
 
-            if (obj.has("overallVerdict")) feedback.overallVerdict = obj.get("overallVerdict").getAsString();
-            if (obj.has("atsScore")) feedback.atsScore = obj.get("atsScore").getAsInt();
+            if (obj.has("overallVerdict"))  feedback.overallVerdict = obj.get("overallVerdict").getAsString();
+            if (obj.has("atsScore"))        feedback.atsScore = obj.get("atsScore").getAsInt();
 
-            feedback.resumeStrengths = jsonArrayToList(obj, "resumeStrengths");
+            feedback.resumeStrengths     = jsonArrayToList(obj, "resumeStrengths");
             feedback.criticalImprovements = jsonArrayToList(obj, "criticalImprovements");
-            feedback.atsTips = jsonArrayToList(obj, "atsTips");
-            feedback.interviewTopics = jsonArrayToList(obj, "interviewTopics");
+            feedback.atsTips             = jsonArrayToList(obj, "atsTips");
+            feedback.interviewTopics     = jsonArrayToList(obj, "interviewTopics");
 
         } catch (Exception e) {
             feedback.overallVerdict = "Analysis completed. Check skill breakdown above.";
