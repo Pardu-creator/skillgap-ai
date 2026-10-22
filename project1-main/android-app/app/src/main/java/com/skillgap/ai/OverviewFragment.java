@@ -124,6 +124,27 @@ public class OverviewFragment extends Fragment {
                 updateUI();
             }
         });
+
+        View btnHeaderLogout = getView() != null ? getView().findViewById(R.id.btnHeaderLogout) : null;
+        if (btnHeaderLogout != null) {
+            btnHeaderLogout.setOnClickListener(v -> {
+                if (getActivity() != null) {
+                    android.content.SharedPreferences prefs = getActivity().getSharedPreferences("skillgap_prefs", android.content.Context.MODE_PRIVATE);
+                    prefs.edit()
+                         .putBoolean("is_logged_in", false)
+                         .remove("user_name")
+                         .remove("user_email")
+                         .apply();
+
+                    android.widget.Toast.makeText(getActivity(), "Logged out. Redirecting to login...", android.widget.Toast.LENGTH_SHORT).show();
+
+                    android.content.Intent intent = new android.content.Intent(getActivity(), LoginActivity.class);
+                    intent.setFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    getActivity().finish();
+                }
+            });
+        }
     }
 
     private void setupCandidateButtons() {

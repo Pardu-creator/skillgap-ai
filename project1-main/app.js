@@ -83,6 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupDragAndDrop();
   setupForm();
   setupChat();
+  setupAuth();
 });
 
 // ─── Tab Switcher ─────────────────────────────────────────────
@@ -595,3 +596,252 @@ function formatMarkdown(text) {
     .replace(/`(.*?)`/g, '<code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;">$1</code>')
     .replace(/\n/g, '<br>');
 }
+
+// ─── Authentication & Login Modal Engine ──────────────────────
+function setupAuth() {
+  const authModal = document.getElementById("authModal");
+  const navLoginBtn = document.getElementById("navLoginBtn");
+  const navUserPill = document.getElementById("navUserPill");
+  const navUserName = document.getElementById("navUserName");
+  const navUserRole = document.getElementById("navUserRole");
+  const navUserAvatar = document.getElementById("navUserAvatar");
+  const logoutBtn = document.getElementById("logoutBtn");
+  const closeAuthModalBtn = document.getElementById("closeAuthModalBtn");
+
+  const signinForm = document.getElementById("signinForm");
+  const registerForm = document.getElementById("registerForm");
+  const resetForm = document.getElementById("resetForm");
+  const authTabBtns = document.querySelectorAll(".auth-tab-btn");
+  const authTabPanels = document.querySelectorAll(".auth-tab-panel");
+  const demoButtons = document.querySelectorAll(".demo-profile-btn");
+  const regPassword = document.getElementById("regPassword");
+  const pwdStrengthBar = document.getElementById("pwdStrengthBar");
+  const pwdStrengthText = document.getElementById("pwdStrengthText");
+
+  // Open / Close modal helpers
+  function openModal(defaultTab = "signin") {
+    if (!authModal) return;
+    authModal.classList.add("active");
+    switchTab(defaultTab);
+  }
+
+  function closeModal() {
+    if (!authModal) return;
+    authModal.classList.remove("active");
+  }
+
+  function switchTab(tabName) {
+    authTabBtns.forEach(b => {
+      b.classList.toggle("active", b.dataset.authTab === tabName);
+    });
+    authTabPanels.forEach(p => {
+      p.classList.remove("active");
+    });
+    const targetPanel = document.getElementById(`authTab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+    if (targetPanel) targetPanel.classList.add("active");
+  }
+
+  // Update UI based on session
+  function applyUserState(user) {
+    if (user && user.isLoggedIn) {
+      if (navUserPill) navUserPill.style.display = "flex";
+      if (navLoginBtn) navLoginBtn.style.display = "none";
+      if (navUserName) navUserName.textContent = user.name || "User";
+      if (navUserRole) navUserRole.textContent = `🎯 ${user.role || "Developer"}`;
+      if (navUserAvatar) {
+        const initials = (user.name || "DU").split(" ").map(w => w[0]).join("").substring(0, 2).toUpperCase();
+        navUserAvatar.textContent = initials;
+      }
+    } else {
+      if (navUserPill) navUserPill.style.display = "none";
+      if (navLoginBtn) {
+        navLoginBtn.style.display = "inline-flex";
+        navLoginBtn.style.alignItems = "center";
+        navLoginBtn.style.gap = "6px";
+      }
+    }
+  }
+
+  // Check saved session
+  let savedUser = null;
+  try {
+    const raw = localStorage.getItem("skillgap_auth_user");
+    if (raw) savedUser = JSON.parse(raw);
+  } catch (e) {
+    savedUser = null;
+  }
+
+  if (savedUser && savedUser.isLoggedIn) {
+    applyUserState(savedUser);
+  } else {
+    applyUserState(null);
+    // Show login page immediately on first visit
+    setTimeout(() => {
+      openModal("signin");
+    }, 400);
+  }
+
+  // Navbar button events
+  if (navLoginBtn) {
+    navLoginBtn.addEventListener("click", () => openModal("signin"));
+  }
+
+  if (closeAuthModalBtn) {
+    closeAuthModalBtn.addEventListener("click", closeModal);
+  }
+
+  if (authModal) {
+    authModal.addEventListener("click", (e) => {
+      if (e.target === authModal) closeModal();
+    });
+  }
+
+  // Tab switching
+  authTabBtns.forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      switchTab(btn.dataset.authTab);
+    });
+  });
+
+  // Demo Profiles Click
+  demoButtons.forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const demoKey = btn.dataset.demo;
+      let profile = { name: "Demo User", role: "Full Stack Developer", email: "demo@skillgap.ai", isLoggedIn: true };
+
+      if (demoKey === "alex") {
+        profile = { name: "Alex Rivera", role: "Frontend Engineer", email: "alex@example.com", isLoggedIn: true };
+        const presetChip = document.querySelector('[data-preset="frontend"]');
+        if (presetChip) presetChip.click();
+      } else if (demoKey === "priya") {
+        profile = { name: "Priya Sharma", role: "Machine Learning Engineer", email: "priya@example.com", isLoggedIn: true };
+        const presetChip = document.querySelector('[data-preset="ai"]');
+        if (presetChip) presetChip.click();
+      } else {
+        const presetChip = document.querySelector('[data-preset="fullstack"]');
+        if (presetChip) presetChip.click();
+      }
+
+      localStorage.setItem("skillgap_auth_user", JSON.stringify(profile));
+      applyUserState(profile);
+      closeModal();
+      showToast(`Logged in as ${profile.name}! 🚀`);
+    });
+  });
+
+  // Sign In Form Submit
+  if (signinForm) {
+    signinForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("signinEmail").value.trim();
+      const rawName = email.split("@")[0].replace(/[._]/g, " ");
+      const formattedName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+
+      const user = {
+        name: formattedName || "Developer",
+        email: email,
+        role: "Full Stack Developer",
+        isLoggedIn: true
+      };
+
+      localStorage.setItem("skillgap_auth_user", JSON.stringify(user));
+      applyUserState(user);
+      closeModal();
+      showToast(`Welcome back, ${user.name}! ⚡`);
+    });
+  }
+
+  // Register Form Submit
+  if (registerForm) {
+    registerForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("regName").value.trim();
+      const email = document.getElementById("regEmail").value.trim();
+      const role = document.getElementById("regRole").value;
+
+      const user = {
+        name: name || "Developer",
+        email: email,
+        role: role,
+        isLoggedIn: true
+      };
+
+      localStorage.setItem("skillgap_auth_user", JSON.stringify(user));
+      applyUserState(user);
+      closeModal();
+      showToast(`Account created! Welcome, ${user.name}! 🎉`);
+    });
+  }
+
+  // Reset Form Submit
+  if (resetForm) {
+    resetForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("resetEmail").value.trim();
+      showToast(`Password recovery link sent to ${email} 📩`);
+      setTimeout(() => switchTab("signin"), 1500);
+    });
+  }
+
+  // Logout Button
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      localStorage.removeItem("skillgap_auth_user");
+      applyUserState(null);
+      showToast("Logged out successfully");
+      setTimeout(() => openModal("signin"), 300);
+    });
+  }
+
+  // Password strength meter
+  if (regPassword && pwdStrengthBar && pwdStrengthText) {
+    regPassword.addEventListener("input", () => {
+      const val = regPassword.value;
+      let score = 0;
+      if (val.length >= 6) score += 25;
+      if (val.length >= 10) score += 25;
+      if (/[A-Z]/.test(val) && /[0-9]/.test(val)) score += 25;
+      if (/[^A-Za-z0-9]/.test(val)) score += 25;
+
+      pwdStrengthBar.style.width = `${score}%`;
+      if (score <= 25) {
+        pwdStrengthBar.style.background = "#EF4444";
+        pwdStrengthText.textContent = "Weak";
+        pwdStrengthText.style.color = "#EF4444";
+      } else if (score <= 50) {
+        pwdStrengthBar.style.background = "#F59E0B";
+        pwdStrengthText.textContent = "Medium";
+        pwdStrengthText.style.color = "#F59E0B";
+      } else if (score <= 75) {
+        pwdStrengthBar.style.background = "#3B82F6";
+        pwdStrengthText.textContent = "Good";
+        pwdStrengthText.style.color = "#3B82F6";
+      } else {
+        pwdStrengthBar.style.background = "#10B981";
+        pwdStrengthText.textContent = "Strong";
+        pwdStrengthText.style.color = "#10B981";
+      }
+    });
+  }
+
+  function showToast(msg) {
+    let toast = document.getElementById("skillgapToast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "skillgapToast";
+      toast.style.cssText = "position:fixed;bottom:24px;right:24px;background:#1E293B;color:#FFFFFF;border:1px solid #4F46E5;padding:12px 20px;border-radius:10px;font-size:0.9rem;font-weight:600;box-shadow:0 10px 25px rgba(0,0,0,0.4);z-index:9999;transition:opacity 0.3s ease, transform 0.3s ease;opacity:0;transform:translateY(10px);pointer-events:none;";
+      document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.style.opacity = "1";
+    toast.style.transform = "translateY(0)";
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      toast.style.transform = "translateY(10px)";
+    }, 3000);
+  }
+}
+
