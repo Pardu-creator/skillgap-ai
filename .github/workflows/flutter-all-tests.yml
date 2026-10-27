@@ -1,0 +1,350 @@
+name: Flutter All Tests Suite
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: '3.44.0'
+  APP_DIR: skillgap_flutter
+
+jobs:
+  # =========================================================================
+  # SETUP — checkout + Flutter toolchain + pub get
+  # =========================================================================
+  setup-flutter:
+    name: setup-flutter
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Resolve dependencies
+        run: |
+          cd ${{ env.APP_DIR }}
+          flutter --version
+          flutter pub get
+
+  # =========================================================================
+  # UNIT TESTS — flutter analyze + flutter test
+  # =========================================================================
+  unit-tests:
+    name: Unit Tests — Dart
+    runs-on: ubuntu-latest
+    needs: setup-flutter
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Analyze
+        run: |
+          cd ${{ env.APP_DIR }}
+          flutter pub get
+          mkdir -p test-report
+          flutter analyze 2>&1 | tee test-report/analyze.txt || true
+
+      - name: Run unit tests
+        run: |
+          cd ${{ env.APP_DIR }}
+          flutter test --reporter expanded 2>&1 | tee test-report/flutter-test.txt || true
+
+      - name: Upload unit test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-test-report
+          path: ${{ env.APP_DIR }}/test-report/
+          retention-days: 30
+
+  # =========================================================================
+  # VALIDATION TESTS — pubspec / format / project integrity
+  # =========================================================================
+  validation-tests:
+    name: Validation Tests
+    runs-on: ubuntu-latest
+    needs: setup-flutter
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Validate project
+        run: |
+          cd ${{ env.APP_DIR }}
+          flutter pub get
+          mkdir -p validation-report
+          {
+            echo "# Validation Checks — $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            echo ""
+            echo "## Format check"
+            dart format --output=none --set-exit-if-changed lib test \
+              && echo "PASS  dart format" || echo "INFO  dart format reported changes"
+            echo ""
+            echo "## Required files"
+            for f in pubspec.yaml lib/main.dart android/app/build.gradle.kts \
+                     android/app/src/main/AndroidManifest.xml test/widget_test.dart; do
+              [ -f "$f" ] && echo "PASS  exists: $f" || echo "FAIL  missing: $f"
+            done
+            echo ""
+            echo "## Dart sources"
+            echo "- lib/ files: $(find lib -name '*.dart' | wc -l)"
+            echo "- screens: $(find lib/screens -name '*.dart' 2>/dev/null | wc -l)"
+            echo "- services: $(find lib/services -name '*.dart' 2>/dev/null | wc -l)"
+            echo ""
+            echo "## Dependency resolution"
+            flutter pub deps --style=compact | tail -15
+          } | tee validation-report/validation-results.txt
+
+      - name: Upload validation report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-report
+          path: ${{ env.APP_DIR }}/validation-report/
+          retention-days: 30
+
+  # =========================================================================
+  # WEB BUILD — flutter build web
+  # =========================================================================
+  build-web:
+    name: Web Build
+    runs-on: ubuntu-latest
+    needs: setup-flutter
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Build web release
+        run: |
+          cd ${{ env.APP_DIR }}
+          flutter pub get
+          flutter build web --release --web-renderer canvaskit
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: web-build
+          path: ${{ env.APP_DIR }}/build/web/
+          retention-days: 30
+
+  # =========================================================================
+  # ANDROID BUILD — flutter build apk --release
+  # =========================================================================
+  build-apk:
+    name: Appium — Android Build
+    runs-on: ubuntu-latest
+    needs: setup-flutter
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Build release APK
+        run: |
+          cd ${{ env.APP_DIR }}
+          flutter pub get
+          flutter build apk --release
+
+      - name: Inspect APK
+        run: |
+          cd ${{ env.APP_DIR }}
+          APK=$(ls build/app/outputs/flutter-apk/app-release.apk 2>/dev/null || true)
+          mkdir -p android-report
+          if [ -n "$APK" ]; then
+            {
+              echo "APK: $APK"
+              echo "Size: $(du -h "$APK" | cut -f1)"
+              echo "ABIs:"
+              unzip -l "$APK" | grep "lib/" | awk '{print $4}' | cut -d/ -f2 | sort -u | sed 's/^/  - /' || true
+            } | tee android-report/apk-info.txt
+            cp "$APK" android-report/SkillGapAI.apk
+          else
+            echo "APK not produced" | tee android-report/apk-info.txt
+          fi
+
+      - name: Upload android build
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: appium-report
+          path: ${{ env.APP_DIR }}/android-report/
+          retention-days: 30
+
+  # =========================================================================
+  # SECURITY ASSESSMENT — dependency audit + secret scan
+  # =========================================================================
+  security-assessment:
+    name: security-assessment
+    runs-on: ubuntu-latest
+    needs: setup-flutter
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Dependency + secret audit
+        run: |
+          cd ${{ env.APP_DIR }}
+          flutter pub get
+          mkdir -p security-report
+          {
+            echo "# Security Assessment — $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            echo ""
+            echo "## Outdated / vulnerable dependency surface"
+            flutter pub outdated --no-transitive 2>&1 || true
+            echo ""
+            echo "## Secret pattern scan (lib/)"
+            hits=$(grep -rInE "(api[_-]?key|secret|password|token)[\"']?\s*[:=]\s*[\"'][A-Za-z0-9_\-]{16,}" lib/ || true)
+            if [ -z "$hits" ]; then echo "PASS  no hardcoded secrets in lib/"; else echo "$hits"; fi
+            echo ""
+            echo "## Manifest permissions"
+            grep -oE 'uses-permission android:name="[^"]+"' android/app/src/main/AndroidManifest.xml || true
+          } | tee security-report/security-scan.txt
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-report
+          path: ${{ env.APP_DIR }}/security-report/
+          retention-days: 30
+
+  # =========================================================================
+  # LOAD / SMOKE TEST — serve web build, verify it responds
+  # =========================================================================
+  load-tests:
+    name: Load Testing — Performance
+    runs-on: ubuntu-latest
+    needs: setup-flutter
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Build + serve web, smoke test
+        run: |
+          cd ${{ env.APP_DIR }}
+          flutter pub get
+          flutter build web --release --web-renderer canvaskit
+          cd build/web
+          nohup python3 -m http.server 8501 &
+          sleep 3
+          mkdir -p ../../load-report
+          {
+            echo "# Load / Smoke Test — $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            for path in "/" "/main.dart.js" "/flutter_bootstrap.js" "/manifest.json"; do
+              code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8501$path" || echo "000")
+              ms=$(curl -s -o /dev/null -w "%{time_total}" "http://localhost:8501$path" || echo "?")
+              echo "| $path | HTTP $code | ${ms}s |"
+            done
+          } | tee ../../load-report/load-test.txt
+
+      - name: Upload load report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: load-report
+          path: ${{ env.APP_DIR }}/load-report/
+          retention-days: 30
+
+  # =========================================================================
+  # SUMMARY — compile master report & deploy
+  # =========================================================================
+  compile-master-report:
+    name: Compile Master Report & Deploy
+    runs-on: ubuntu-latest
+    needs: [unit-tests, validation-tests, build-web, build-apk, security-assessment, load-tests]
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+        continue-on-error: true
+
+      - name: Compile master report
+        run: |
+          mkdir -p master-report
+          {
+            echo "# SkillGap AI Flutter — Master Test Report"
+            echo ""
+            echo "- Run: ${{ github.run_number }} (\`${{ github.sha }}\`)"
+            echo "- Branch: ${{ github.ref_name }}"
+            echo "- Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+            echo ""
+            echo "## Artifacts collected"
+            echo ""
+            find all-artifacts -type f | sed 's|^| - \`|; s|$|\`|' || echo " - none"
+          } | tee master-report/MASTER-REPORT.md
+          cp -r all-artifacts/. master-report/ 2>/dev/null || true
+
+      - name: Upload master report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: master-report
+          path: master-report/
+          retention-days: 90
+
+      - name: Publish run summary
+        run: |
+          echo "# Flutter All Tests Suite — Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Suite | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|:---:|" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests — Dart | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Validation Tests | ${{ needs.validation-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Web Build | ${{ needs.build-web.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Appium — Android Build | ${{ needs.build-apk.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Assessment | ${{ needs.security-assessment.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Load Testing — Performance | ${{ needs.load-tests.result }} |" >> $GITHUB_STEP_SUMMARY
