@@ -144,7 +144,7 @@ jobs:
         run: |
           cd ${{ env.APP_DIR }}
           flutter pub get
-          flutter build web --release --web-renderer canvaskit
+          flutter build web --release
 
       - name: Upload web build
         uses: actions/upload-artifact@v4
@@ -273,7 +273,7 @@ jobs:
         run: |
           cd ${{ env.APP_DIR }}
           flutter pub get
-          flutter build web --release --web-renderer canvaskit
+          flutter build web --release
           cd build/web
           nohup python3 -m http.server 8501 &
           sleep 3
